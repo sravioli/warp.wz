@@ -1,7 +1,15 @@
 ---@class Wezterm
 local wz = require "wezterm" --[[@as Wezterm]]
 
----Locate the plugin's `plugin_dir` and add it to package.path
+---Locate the plugin's `plugin_dir` and add it to `package.path`.
+---
+---Iterates the installed WezTerm plugins looking for one whose URL
+---contains `name`. When found, appends the plugin's
+---`plugin_dir/plugin/?.lua` entry to `package.path` so that
+---sub-modules can be loaded with `require`. Does nothing if the
+---path entry already exists or no matching plugin is found.
+---
+---@param name string Substring to match against plugin URLs.
 ---@return nil
 local function bootstrap(name)
   -- selene: allow(incorrect_standard_library_use)
