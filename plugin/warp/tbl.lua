@@ -1,10 +1,5 @@
 ---@module "warp.tbl"
 
--- selene: allow(incorrect_standard_library_use)
-local tbl_unpack = unpack or table.unpack
-
-local co_yield, co_wrap = coroutine.yield, coroutine.wrap
-
 ---@class Warp.Table
 local M = {}
 
@@ -42,38 +37,86 @@ M.islist = function(tbl)
   if type(tbl) ~= "table" then
     return false
   end
-
-  local count = 0
-  for k in pairs(tbl) do
-    if type(k) ~= "number" or k % 1 ~= 0 then
+  local n = #tbl
+  if n == 0 then
+    return next(tbl) == nil
+  end
+  for i = 1, n do
+    if tbl[i] == nil then
       return false
     end
-    count = count + 1
   end
-  return count > 0 and count == #tbl
+  return next(tbl, n) == nil
 end
 
----Compute Cartesian product of multiple tables.
+---Shallow copy of a table.
 ---
----Returns table containing all possible combinations of elements from the input tables.
+---Creates a new table with the same key-value pairs. Nested tables are not cloned —
+---they share the same reference. Non-table values are returned as-is. Metatables are
+---not copied.
+---
+---@param obj any Value to copy. Non-tables are returned as-is.
+---@return any copy Shallow copy if table, otherwise the original value.
+M.copy = function(obj)
+  if type(obj) ~= "table" then
+    return obj
+  end
+  local copy = {}
+  for k, v in pairs(obj) do
+    copy[k] = v
+  end
+  return copy
+end
+
+---Deep copy of a table.
+---
+---Recursively copies all nested tables, producing a fully independent clone. Circular
+---references are handled; each table is copied at most once. Metatables are preserved
+---on every level. Non-table values are returned as-is.
+---
+---@param obj any Value to deep copy. Non-tables are returned as-is.
+---@return any copy Deep copy if table, otherwise the original value.
+M.deepcopy = function(obj)
+  if type(obj) ~= "table" then
+    return obj
+  end
+  local seen = {}
+  local function _copy(t)
+    if type(t) ~= "table" then
+      return t
+    end
+    if seen[t] then
+      return seen[t]
+    end
+    local copy = {}
+    seen[t] = copy
+    for k, v in pairs(t) do
+      copy[k] = _copy(v)
+    end
+    return setmetatable(copy, getmetatable(t))
+  end
+  return _copy(obj)
+end
+
+---Compute Cartesian product of multiple tables (iterator).
+---
+---Returns an iterator yielding each combination as a shared table. The returned table
+---is reused between iterations; copy it if you need to store or mutate individual
+---results.
+---
+---```lua
+---for i, combo in M.cartesian_iter({ { 1, 2 }, { "a", "b" } }) do
+---  print(i, combo[1], combo[2])
+---end
+----- 1  1  a
+----- 2  1  b
+----- 3  2  a
+----- 4  2  b
+---```
 ---
 ---@param sets table Table containing sub-tables (sets) for the product calculation.
----@return table cartesian Table of all possible combinations.
-M.cartesian = function(sets)
-  local res = { {} }
-  for i = 1, #sets do
-    local temp = {}
-    for j = 1, #sets[i] do
-      for k = 1, #res do
-        temp[#temp + 1] = { sets[i][j], tbl_unpack(res[k]) }
-      end
-    end
-    res = temp
-  end
-  return res
-end
-
-M.cartesian_product = function(sets)
+---@return function iterator Iterator returning (index, combination).
+M.cartesian_iter = function(sets)
   local item_counts = {}
   local indices = {}
   local results = {}
@@ -94,69 +137,69 @@ M.cartesian_product = function(sets)
   return function()
     if combination_index >= combination_count then
       return
-    end -- no more output
+    end
 
-    if combination_index == 0 then
-      goto skip_update
-    end -- skip first index update
+    if combination_index > 0 then
+      indices[set_count] = indices[set_count] + 1
 
-    indices[set_count] = indices[set_count] + 1
-
-    for set_index = set_count, 1, -1 do -- update index list
-      local set = sets[set_index]
-      local index = indices[set_index]
-      if index <= item_counts[set_index] then
-        results[set_index] = set[index]
-        break -- no further update needed
-      else -- propagate item_counts overflow
-        results[set_index] = set[1]
-        indices[set_index] = 1
-        if set_index > 1 then
-          indices[set_index - 1] = indices[set_index - 1] + 1
+      for set_index = set_count, 1, -1 do
+        local set = sets[set_index]
+        local index = indices[set_index]
+        if index <= item_counts[set_index] then
+          results[set_index] = set[index]
+          break
+        else
+          results[set_index] = set[1]
+          indices[set_index] = 1
+          if set_index > 1 then
+            indices[set_index - 1] = indices[set_index - 1] + 1
+          end
         end
       end
     end
-
-    ::skip_update::
 
     combination_index = combination_index + 1
     return combination_index, results
   end
 end
 
-M.cartesian_async = function(sets)
-  local result = {}
+---Compute Cartesian product of multiple tables (copying iterator).
+---
+---Wraps [cartesian_iter](lua://Warp.Table.cartesian_iter), copying each yielded
+---combination into a fresh table that the caller can safely store or mutate.
+---
+---@param sets table Table containing sub-tables (sets) for the product calculation.
+---@return function iterator Iterator returning (index, combination).
+M.cartesian_iter_copy = function(sets)
+  local iter = M.cartesian_iter(sets)
   local set_count = #sets
-  local function descend(depth)
-    if depth == set_count then
-      for _, v in pairs(sets[depth]) do
-        result[depth] = v
-        co_yield(result)
-      end
-    else
-      for _, v in pairs(sets[depth]) do
-        result[depth] = v
-        descend(depth + 1)
-      end
+  return function()
+    local i, results = iter()
+    if not i then
+      return
     end
+    local copy = {}
+    for j = 1, set_count do
+      copy[j] = results[j]
+    end
+    return i, copy
   end
-  return co_wrap(function()
-    descend(1)
-  end)
 end
 
----Reverse array elements of table.
+---Compute Cartesian product of multiple tables.
 ---
----Creates a new table containing the array part of the input table in reverse order.
+---Collects all combinations from
+---[cartesian_iter_copy](lua://Warp.Table.cartesian_iter_copy) into a single table. Each
+---entry is an independent table that can be safely stored or mutated.
 ---
----@param tbl table Table to reverse.
----@return table reversed New table with reversed array elements.
-M.reverse = function(tbl)
-  local reversed = {}
-  for i = #tbl, 1, -1 do
-    reversed[#reversed + 1] = tbl[i]
+---@param sets table Table containing sub-tables (sets) for the product calculation.
+---@return table combinations Table of all combinations.
+M.cartesian = function(sets)
+  local out = {}
+  for _, combo in M.cartesian_iter_copy(sets) do
+    out[#out + 1] = combo
   end
-  return reversed
+  return out
 end
 
 ---Reverse array elements of a table in-place.
