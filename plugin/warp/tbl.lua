@@ -8,6 +8,36 @@ local co_yield, co_wrap = coroutine.yield, coroutine.wrap
 ---@class Warp.Table
 local M = {}
 
+---Check if a list has no array elements.
+---
+---Returns `true` when `tbl` is `nil` or its length is `0`. Hash-only entries are
+---ignored; use [isblank](lua://Warp.Table.isblank) to test for a completely empty table.
+---
+---@param tbl table|nil List to check.
+---@return boolean
+M.isempty = function(tbl)
+  return tbl == nil or #tbl == 0
+end
+
+---Check if a table has no entries (array or hash).
+---
+---Returns `true` when `tbl` is `nil` or `next(tbl)` is `nil`, meaning no array or
+---hash-map keys exist.
+---
+---@param tbl table|nil Table to check.
+---@return boolean
+M.isblank = function(tbl)
+  return tbl == nil or next(tbl) == nil
+end
+
+---Check if a table is a contiguous integer-indexed list.
+---
+---Returns `true` when every key in `tbl` is a consecutive integer from `1` to `#tbl`
+---with no gaps or extra hash keys. An empty table (`{}`) is considered a valid list.
+---Returns `false` for non-table values.
+---
+---@param tbl any Value to check.
+---@return boolean
 M.islist = function(tbl)
   if type(tbl) ~= "table" then
     return false
@@ -129,8 +159,20 @@ M.reverse = function(tbl)
   return reversed
 end
 
-M.isempty = function(tbl)
-  return not tbl or #tbl == 0
+---Reverse array elements of a table in-place.
+---
+---Swaps elements from both ends toward the center. Only the array portion (`1` to
+---`#tbl`) is affected; hash keys are untouched.
+---
+---@param tbl table Table to reverse.
+---@return table tbl The same table, reversed.
+M.reverse = function(tbl)
+  local n = #tbl
+  local m = n / 2
+  for i = 1, m do
+    tbl[i], tbl[n - i + 1] = tbl[n - i + 1], tbl[i]
+  end
+  return tbl
 end
 
 return M
