@@ -11,7 +11,6 @@ local cache = memo.cache.namespace "warp.string" ---@class Memo.Cache
 local str_find, str_format, str_gsub, str_sub, str_rep =
   string.find, string.format, string.gsub, string.sub, string.rep
 local tbl_remove, tbl_insert, table_concat = table.remove, table.insert, table.concat
-local floor = math.floor
 
 local maths = require "warp.maths" ---@class Warp.Maths
 
@@ -45,38 +44,34 @@ M.width = function(s)
   return M.col_width(M.strip_ansi(s))
 end
 
---- Normalize padding into left/right integers (>= 0).
---- - nil         -> 1, 1 (default)
---- - number      -> n, n
---- - {l, r} tbl  -> left, right
+---@alias Warp.String.Padding
+---| (integer|{ left: integer|nil, right: integer|nil })
 
 ---Normalize padding into left/right integers (>= 0).
 ---@param padding Warp.String.Padding|nil
 ---@return integer left  left padding
 ---@return integer right right padding
 local function compute_padding(padding)
-  local left, right = 1, 1
-  if not padding then
-    return left, right
+  if padding == nil then
+    return 1, 1
   end
 
   local function clamp(pad)
-    return maths.clamp(pad, 1, math.huge)
+    return maths.clamp(pad, 0, math.huge)
   end
 
   local typ = type(padding)
   if typ == "number" then
-    padding = clamp(padding)
-    left, right = padding, padding
+    local n = clamp(padding)
+    return n, n
   elseif typ == "table" then
-    left, right = clamp(padding.left or 0), clamp(padding.right or 0)
+    local left = padding.left ~= nil and clamp(padding.left) or 0
+    local right = padding.right ~= nil and clamp(padding.right) or 0
+    return left, right
   end
 
-  return left, right
+  return 1, 1
 end
-
----@alias Warp.String.Padding
----| (integer|{ left: integer|nil, right: integer|nil })
 
 ---Pad string on both sides.
 ---
