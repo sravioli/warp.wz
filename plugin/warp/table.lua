@@ -1,4 +1,4 @@
----@module "warp.tbl"
+---@module "warp.table"
 
 local floor = math.floor
 local sort = table.sort

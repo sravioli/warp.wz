@@ -8,9 +8,9 @@
 ---@class Warp.Api
 ---@field list  Warp.List  List (sequence) utilities.
 ---@field maths Warp.Maths Math helpers.
----@field tbl   Warp.Table General table utilities.
+---@field table Warp.Table General table utilities.
 return {
   list = require "warp.list",
   maths = require "warp.maths",
-  tbl = require "warp.tbl",
+  table = require "warp.table",
 }
