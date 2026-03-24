@@ -1,0 +1,343 @@
+---@module 'warp.string'
+
+---@class Wezterm
+local wt = require "wezterm" --[[@as Wezterm]]
+
+---@class Memo.Api
+local memo = wt.plugin.require "https://github.com/sravioli/memo.wz"
+memo.cache.configure { ttl = nil, stats = false, debug = false }
+local cache = memo.cache.namespace "warp.string" ---@class Memo.Cache
+
+local str_find, str_format, str_gsub, str_sub, str_rep =
+  string.find, string.format, string.gsub, string.sub, string.rep
+local tbl_remove, tbl_insert, table_concat = table.remove, table.insert, table.concat
+local floor = math.floor
+
+local maths = require "warp.maths" ---@class Warp.Maths
+
+---@class Warp.String
+local M = {}
+
+M.empty = ""
+M.space = " "
+
+M.col_width = wt.column_width
+
+---Strip ANSI/VT escape sequences from a string.
+---@param s string raw rendered string, may contain ANSI colour codes
+---@return string s
+M.strip_ansi = function(s)
+  return (s:gsub("\27%[[\32-\63]*[\64-\126]", ""))
+end
+
+---Calculate visible string width.
+---
+---Strips any ANSI escape sequences (otherwise they would contribute to the width) and then
+---call the WezTerm internal `column_width()` function.
+---
+---@param s string input string
+---@return number column_width
+M.width = function(s)
+  -- Fast path: no ESC byte means no ANSI codes to strip
+  if not str_find(s, "\27", 1, true) then
+    return M.col_width(s)
+  end
+  return M.col_width(M.strip_ansi(s))
+end
+
+--- Normalize padding into left/right integers (>= 0).
+--- - nil         -> 1, 1 (default)
+--- - number      -> n, n
+--- - {l, r} tbl  -> left, right
+
+---Normalize padding into left/right integers (>= 0).
+---@param padding Warp.String.Padding|nil
+---@return integer left  left padding
+---@return integer right right padding
+local function compute_padding(padding)
+  local left, right = 1, 1
+  if not padding then
+    return left, right
+  end
+
+  local function clamp(pad)
+    return maths.clamp(pad, 1, math.huge)
+  end
+
+  local typ = type(padding)
+  if typ == "number" then
+    padding = clamp(padding)
+    left, right = padding, padding
+  elseif typ == "table" then
+    left, right = clamp(padding.left or 0), clamp(padding.right or 0)
+  end
+
+  return left, right
+end
+
+---@alias Warp.String.Padding
+---| (integer|{ left: integer|nil, right: integer|nil })
+
+---Pad string on both sides.
+---
+---Converts input to string if necessary and adds whitespace to both sides. It adds a single
+---whitespace character by default but respects `nil` values when `padding` is a table (eg.
+---given `{ left = 1, right = nil }` it won't add any right padding).
+---
+---@param s       string|any              Input value to pad.
+---@param padding Warp.String.Padding|nil Spaces to add per side. Defaults to `1`.
+---@param ch      string|nil              Char to use when padding. Defaults to `" "`
+---@return string padded Resulting padded string.
+function M.pad(s, padding, ch)
+  s = type(s) == "string" and s or tostring(s)
+  local l, r = compute_padding(padding)
+
+  local left = l > 0 and str_rep(ch or M.space, l) or M.empty
+  local right = r > 0 and str_rep(ch or M.space, r) or M.empty
+  return left .. s .. right
+end
+
+---Pad string on left side.
+---
+---@param s       string|any  Input value to pad.
+---@param padding integer|nil Spaces to add. Defaults to `1`
+---@param ch      string|nil  Char to use when padding. Defaults to `" "`
+---@return string padded Resulting left-padded string.
+M.padl = function(s, padding, ch)
+  return M.pad(s, { left = padding or 1, right = nil }, ch)
+end
+
+---Pad string on right side.
+---
+---@param s       string|any  Input value to pad.
+---@param padding integer|nil Spaces to add. Defaults to `1`
+---@param ch      string|nil  Char to use when padding. Defaults to `" "`
+---@return string padded Resulting right-padded string.
+M.padr = function(s, padding, ch)
+  return M.pad(s, { left = nil, right = padding or 1 }, ch)
+end
+
+---Remove leading and trailing whitespace.
+---
+---@param s string Input string.
+---@return string trimmed Trimmed string.
+M.trim = function(s)
+  return (str_gsub(s, "^%s*(.-)%s*$", "%1"))
+end
+
+---Iterate over substrings separated by pattern.
+---
+---Returns iterator yielding substrings from input `s` separated by `sep`.
+---
+---@param s     string          Input string to split.
+---@param sep   string          Separator pattern.
+---@param opts? SplitOpts|table Optional splitting behavior.
+---@return fun(): string|nil iterator Iterator returning next substring or nil.
+M.gsplit = function(s, sep, opts)
+  local plain, trimempty
+  opts = opts or {}
+  plain, trimempty = opts.plain, opts.trimempty
+
+  local start = 1
+  local done = false
+
+  -- For `trimempty`: queue of collected segments, to be emitted at next pass.
+  local segs = {}
+  local empty_start = true -- Only empty segments seen so far.
+
+  local function _pass(i, j, ...)
+    if i then
+      assert(j + 1 > start, "Infinite loop detected")
+      local seg = str_sub(s, start, i - 1)
+      start = j + 1
+      return seg, ...
+    else
+      done = true
+      return str_sub(s, start)
+    end
+  end
+
+  return function()
+    if trimempty and #segs > 0 then
+      -- trimempty: Pop the collected segments.
+      return tbl_remove(segs)
+    elseif done or (s == "" and sep == "") then
+      return nil
+    elseif sep == "" then
+      if start == #s then
+        done = true
+      end
+      return _pass(start + 1, start)
+    end
+
+    local seg = _pass(str_find(s, sep, start, plain))
+
+    -- Trim empty segments from start/end.
+    if trimempty and seg ~= "" then
+      empty_start = false
+    elseif trimempty and seg == "" then
+      while not done and seg == "" do
+        segs[1] = ""
+        seg = _pass(str_find(s, sep, start, plain))
+      end
+      if done and seg == "" then
+        return nil
+      elseif empty_start then
+        empty_start = false
+        segs = {}
+        return seg
+      end
+      if seg ~= "" then
+        segs[1] = seg
+      end
+      return tbl_remove(segs)
+    end
+
+    return seg
+  end
+end
+
+---Split string into list of substrings.
+---
+---Uses `gsplit` internally and caches the result.
+---
+---@param s     string          Input string to split.
+---@param sep   string          Separator pattern.
+---@param opts? SplitOpts|table Optional splitting behavior.
+---@return string[] parts       List of substrings.
+M.split = function(s, sep, opts)
+  return cache.compute("str.split", function()
+    local t = {}
+    for c in M.gsplit(s, sep, opts) do
+      t[#t + 1] = c
+    end
+    return t
+  end, s, sep, opts)
+end
+
+local ELLIPSIS = require("utils.icons").Ellipsis
+local ELLIPSIS_W = M.width(ELLIPSIS)
+
+--- Take up to `budget` visible columns from the *left* of `s`.
+--- No ellipsis is added.
+---@param  s      string
+---@param  budget integer
+---@return string
+---@return integer columns consumed
+local function take_left(s, budget)
+  local parts, w = {}, 0
+  for cp in s:gmatch "[^\128-\191][\128-\191]*" do
+    local cpw = M.width(cp)
+    if w + cpw > budget then
+      break
+    end
+    parts[#parts + 1] = cp
+    w = w + cpw
+  end
+  return table_concat(parts), w
+end
+
+--- Take up to `budget` visible columns from the *right* of `s`.
+--- No ellipsis is added.
+---@param  s      string
+---@param  budget integer
+---@return string
+---@return integer columns consumed
+local function take_right(s, budget)
+  local cps = {}
+  for cp in s:gmatch "[^\128-\191][\128-\191]*" do
+    cps[#cps + 1] = cp
+  end
+
+  local parts, w = {}, 0
+  for i = #cps, 1, -1 do
+    local cpw = M.width(cps[i])
+    if w + cpw > budget then
+      break
+    end
+    tbl_insert(parts, 1, cps[i])
+    w = w + cpw
+  end
+  return table_concat(parts), w
+end
+
+---Return whether `s` already fits within `budget` visible columns.
+---
+---@param  s      string
+---@param  budget integer
+---@return boolean
+M.fits = function(s, budget)
+  return M.width(s) <= budget
+end
+
+---Truncate from the **right**, appending an ellipsis.
+---`"plasma-csd-generator.rebupk"` → `"plasma-csd-gen…"`
+---
+---@param  s      string
+---@param  budget integer  total columns available (including the ellipsis)
+---@return string
+M.truncate_right = function(s, budget)
+  if M.fits(s, budget) then
+    return s
+  end
+  if budget <= ELLIPSIS_W then
+    return ELLIPSIS
+  end
+  return take_left(s, budget - ELLIPSIS_W) .. ELLIPSIS
+end
+
+---Truncate from the **left**, prepending an ellipsis.
+---`"plasma-csd-generator.rebupk"` → `"…ator.rebupk"`
+---
+---@param  s      string
+---@param  budget integer  total columns available (including the ellipsis)
+---@return string
+M.truncate_left = function(s, budget)
+  if M.fits(s, budget) then
+    return s
+  end
+  if budget <= ELLIPSIS_W then
+    return ELLIPSIS
+  end
+  return ELLIPSIS .. take_right(s, budget - ELLIPSIS_W)
+end
+
+---Truncate from the **middle**, keeping both ends readable.
+---The left side gets the extra column when the budget is odd.
+---`"plasma-csd-generator.rebupk"` → `"plasma-c…rebupk"`
+---
+---@param  s      string
+---@param  budget integer  total columns available (including the ellipsis)
+---@return string
+M.truncate_middle = function(s, budget)
+  if M.fits(s, budget) then
+    return s
+  end
+  if budget <= ELLIPSIS_W then
+    return ELLIPSIS
+  end
+
+  local remaining = budget - ELLIPSIS_W
+  local left_n = math.ceil(remaining / 2)
+  local right_n = math.floor(remaining / 2)
+
+  return take_left(s, left_n) .. ELLIPSIS .. take_right(s, right_n)
+end
+
+---Truncate `s` to fit within `budget` columns using the specified strategy.
+---
+---@param  s      string
+---@param  budget integer
+---@param  mode   TruncateMode
+---@return string
+M.truncate = function(s, budget, mode)
+  if mode == "left" then
+    return M.truncate_left(s, budget)
+  end
+  if mode == "middle" then
+    return M.truncate_middle(s, budget)
+  end
+  return M.truncate_right(s, budget)
+end
+
+return M
