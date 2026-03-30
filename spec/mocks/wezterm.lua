@@ -4,6 +4,9 @@
 
 local M = {}
 
+--- Default target triple (can be overridden before requiring dependents).
+M.target_triple = "x86_64-unknown-linux-gnu"
+
 --- Naïve column_width: counts UTF-8 codepoints (each = 1 column).
 --- Good enough for ASCII; CJK double-width is NOT emulated.
 function M.column_width(s)
