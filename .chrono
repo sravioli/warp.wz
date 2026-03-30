@@ -1,0 +1,8 @@
+return {
+  default = {
+    ROOT = { "bench/" },
+    pattern = "_bench",
+    format = "pretty",
+    defer_print = false,
+  },
+}
