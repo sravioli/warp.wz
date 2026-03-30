@@ -9,8 +9,8 @@ local col_width = str.col_width
 local str_split = str.split
 local wt_truncate_right = wt.truncate_right
 
-local str_byte, str_find, str_sub, str_match, str_gsub =
-  string.byte, string.find, string.sub, string.match, string.gsub
+local str_byte, str_find, str_gmatch, str_sub, str_match, str_gsub =
+  string.byte, string.find, string.gmatch, string.sub, string.match, string.gsub
 local tbl_concat = table.concat
 local ceil, floor, max = math.ceil, math.floor, math.max
 
@@ -206,14 +206,16 @@ local function truncate_middle(s, budget)
 
   -- Collect codepoints so we can take exactly right_n columns from the end
   local cps = {}
-  for cp in s:gmatch "[^\128-\191][\128-\191]*" do
-    cps[#cps + 1] = cp
+  local cp_count = 0
+  for cp in str_gmatch(s, "[^\128-\191][\128-\191]*") do
+    cp_count = cp_count + 1
+    cps[cp_count] = cp
   end
 
   -- Find start index for rightmost `right_n` columns (avoids table.insert prepend)
-  local start_idx = #cps + 1
+  local start_idx = cp_count + 1
   local w = 0
-  for i = #cps, 1, -1 do
+  for i = cp_count, 1, -1 do
     local cpw = col_width(cps[i])
     if w + cpw > right_n then
       break
@@ -222,7 +224,7 @@ local function truncate_middle(s, budget)
     w = w + cpw
   end
 
-  return left .. ellipsis .. tbl_concat(cps, "", start_idx, #cps)
+  return left .. ellipsis .. tbl_concat(cps, "", start_idx, cp_count)
 end
 
 --- Count occurrences of a literal substring using string.find (JIT-friendly).

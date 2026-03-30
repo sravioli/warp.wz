@@ -83,7 +83,7 @@ M.find_git_dir = function(directory)
     local handle = ioopen(dir .. "/.git/HEAD", "r")
     if handle then
       ioclose(handle)
-      return (dir:gsub(M.home, "~"))
+      return (sgsub(dir, M.home, "~"))
     elseif dir == "/" or dir == "" then
       break
     else

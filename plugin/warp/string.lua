@@ -3,7 +3,8 @@
 ---@class Wezterm
 local wt = require "wezterm" --[[@as Wezterm]]
 
-local str_find, str_gsub, str_sub, str_rep = string.find, string.gsub, string.sub, string.rep
+local str_find, str_gmatch, str_gsub, str_sub, str_rep =
+  string.find, string.gmatch, string.gsub, string.sub, string.rep
 local tbl_remove, table_concat = table.remove, table.concat
 local ceil, floor = math.ceil, math.floor
 local huge = math.huge
@@ -33,7 +34,7 @@ M.col_width = col_width
 ---@param s string Raw rendered string, may contain ANSI codes.
 ---@return string s String with ANSI sequences removed.
 local function strip_ansi(s)
-  return (s:gsub("\27%[[\32-\63]*[\64-\126]", ""))
+  return (str_gsub(s, "\27%[[\32-\63]*[\64-\126]", ""))
 end
 M.strip_ansi = strip_ansi
 
@@ -224,8 +225,10 @@ end
 ---@return string[] parts    List of substrings.
 M.split = function(s, sep, opts)
   local t = {}
+  local n = 0
   for c in M.gsplit(s, sep, opts) do
-    t[#t + 1] = c
+    n = n + 1
+    t[n] = c
   end
   return t
 end
@@ -240,13 +243,14 @@ local ELLIPSIS_W = width(ELLIPSIS)
 ---@return string left    Left portion of input.
 ---@return integer width  Columns consumed.
 local function take_left(s, budget)
-  local parts, w = {}, 0
-  for cp in s:gmatch "[^\128-\191][\128-\191]*" do
+  local parts, n, w = {}, 0, 0
+  for cp in str_gmatch(s, "[^\128-\191][\128-\191]*") do
     local cpw = width(cp)
     if w + cpw > budget then
       break
     end
-    parts[#parts + 1] = cp
+    n = n + 1
+    parts[n] = cp
     w = w + cpw
   end
   return table_concat(parts), w
@@ -260,13 +264,15 @@ end
 ---@return integer width  Columns consumed.
 local function take_right(s, budget)
   local cps = {}
-  for cp in s:gmatch "[^\128-\191][\128-\191]*" do
-    cps[#cps + 1] = cp
+  local cp_count = 0
+  for cp in str_gmatch(s, "[^\128-\191][\128-\191]*") do
+    cp_count = cp_count + 1
+    cps[cp_count] = cp
   end
 
-  local start_idx = #cps + 1
+  local start_idx = cp_count + 1
   local w = 0
-  for i = #cps, 1, -1 do
+  for i = cp_count, 1, -1 do
     local cpw = width(cps[i])
     if w + cpw > budget then
       break
@@ -274,7 +280,7 @@ local function take_right(s, budget)
     start_idx = i
     w = w + cpw
   end
-  return table_concat(cps, "", start_idx, #cps), w
+  return table_concat(cps, "", start_idx, cp_count), w
 end
 
 ---Return whether `s` already fits within `budget` visible columns.
