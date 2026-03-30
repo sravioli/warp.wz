@@ -29,8 +29,19 @@ function M.load_fs(opts)
   end
 
   -- Mock io.open / io.close if requested.
+  -- The mock only handles paths it recognises (returns a truthy handle).
+  -- Everything else falls through to the real io.open so that the luarocks
+  -- loader (present in CI) can open manifest files without crashing on a
+  -- bare nil return.
   if opts.io_open then
-    io.open = opts.io_open
+    local mock_open = opts.io_open
+    io.open = function(...)
+      local handle = mock_open(...)
+      if handle then
+        return handle
+      end
+      return _real_io_open(...)
+    end
   else
     io.open = _real_io_open
   end

@@ -218,12 +218,14 @@ describe("warp.filesystem", function()
     end)
 
     it("expands tilde to home", function()
-      local opened_paths = {}
+      local git_paths = {}
       local fs = load_fs {
         triple = "x86_64-unknown-linux-gnu",
         env = { HOME = "/home/user" },
         io_open = function(path)
-          opened_paths[#opened_paths + 1] = path
+          if path:find("%.git/HEAD$") then
+            git_paths[#git_paths + 1] = path
+          end
           if path == "/home/user/repo/.git/HEAD" then
             return {}
           end
@@ -232,7 +234,7 @@ describe("warp.filesystem", function()
         io_close = function() end,
       }
       fs.find_git_dir "~/repo"
-      assert.are.equal("/home/user/repo/.git/HEAD", opened_paths[1])
+      assert.are.equal("/home/user/repo/.git/HEAD", git_paths[1])
     end)
 
     it("finds git root at directory itself", function()
@@ -255,8 +257,10 @@ describe("warp.filesystem", function()
       local fs = load_fs {
         triple = "x86_64-unknown-linux-gnu",
         env = { HOME = "/home/user" },
-        io_open = function()
-          count = count + 1
+        io_open = function(path)
+          if path:find("%.git/HEAD$") then
+            count = count + 1
+          end
           return nil
         end,
       }
