@@ -22,6 +22,7 @@ local function pct_decode(hex)
   return schar(tonumber(hex, 16))
 end
 
+---Target triple from WezTerm, used for platform detection.
 ---@package
 M.target_triple = wt_triple
 
@@ -99,8 +100,8 @@ end
 ---Falls back to `wezterm.hostname()` when the URI carries no host information.
 ---Strips any domain suffix and title-cases the result.
 ---
----@param  pane Pane WezTerm pane object.
----@return string hostname
+---@param pane Pane WezTerm pane object.
+---@return string hostname Short hostname of the pane.
 M.get_hostname = function(pane)
   local hostname = ""
   local cwd_uri = pane:get_current_working_dir()
@@ -135,9 +136,9 @@ end
 ---Normalises the home directory to `~`.
 ---Optionally resolves the git root instead of the literal CWD.
 ---
----@param  pane                    Pane    WezTerm pane object.
----@param  search_git_root_instead boolean If true, returns git root instead of CWD.
----@return string cwd
+---@param pane                    Pane    WezTerm pane object.
+---@param search_git_root_instead boolean If true, returns git root instead of CWD.
+---@return string cwd Current working directory or git root.
 M.get_cwd = function(pane, search_git_root_instead)
   local cwd = ""
   local cwd_uri = pane:get_current_working_dir()
@@ -205,10 +206,10 @@ end
 ---@deprecated Use `get_cwd` and `get_hostname` separately.
 ---Kept for backwards compatibility; delegates to the two focused functions.
 ---
----@param  pane                    Pane    WezTerm pane object.
----@param  search_git_root_instead boolean If true, returns git root instead of CWD.
----@return string cwd
----@return string hostname
+---@param pane                    Pane    WezTerm pane object.
+---@param search_git_root_instead boolean If true, returns git root instead of CWD.
+---@return string cwd      Current working directory or git root.
+---@return string hostname Short hostname of the pane.
 M.get_cwd_hostname = function(pane, search_git_root_instead)
   return M.get_cwd(pane, search_git_root_instead), M.get_hostname(pane)
 end

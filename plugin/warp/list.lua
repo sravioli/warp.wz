@@ -85,9 +85,9 @@ end
 ---```
 ---
 ---@generic T
----@param list T[]             List to deduplicate (modified in-place).
----@param key? fun(x: T): any Optional uniqueness key function.
----@return T[] list            The same list, deduplicated.
+---@param list T[]                  List to deduplicate (modified in-place).
+---@param key  (fun(x: T): any)|nil Optional uniqueness key function.
+---@return T[] list                 The same list, deduplicated.
 M.unique = function(list, key)
   local seen = {}
   local n = #list
@@ -115,11 +115,11 @@ end
 ---`t[j] >= val` for all `j >= i`, or `hi` if no such index exists.
 ---
 ---@generic T
----@param t   T[]                    Sorted list.
----@param val T                      Value to search for.
----@param lo  integer                Start index (inclusive).
----@param hi  integer                End index (exclusive).
----@param key? fun(val: any): any    Map before comparison.
+---@param t   T[]                        Sorted list.
+---@param val T                          Value to search for.
+---@param lo  integer                    Start index (inclusive).
+---@param hi  integer                    End index (exclusive).
+---@param key (fun(val: any): any)|nil   Map before comparison.
 ---@return integer
 local function lower_bound(t, val, lo, hi, key)
   local val_key = key and key(val) or val
@@ -141,11 +141,11 @@ end
 ---`t[j] > val` for all `j >= i`, or `hi` if no such index exists.
 ---
 ---@generic T
----@param t   T[]                    Sorted list.
----@param val T                      Value to search for.
----@param lo  integer                Start index (inclusive).
----@param hi  integer                End index (exclusive).
----@param key? fun(val: any): any    Map before comparison.
+---@param t   T[]                        Sorted list.
+---@param val T                          Value to search for.
+---@param lo  integer                    Start index (inclusive).
+---@param hi  integer                    End index (exclusive).
+---@param key (fun(val: any): any)|nil   Map before comparison.
 ---@return integer
 local function upper_bound(t, val, lo, hi, key)
   local val_key = key and key(val) or val
@@ -162,10 +162,10 @@ local function upper_bound(t, val, lo, hi, key)
 end
 
 ---@class Warp.List.BisectOpts
----@field lo?    integer              Start index (default `1`).
----@field hi?    integer              End index, exclusive (default `#list + 1`).
----@field key?   fun(val: any): any   Map each element before comparison.
----@field bound? "lower"|"upper"      Search variant (default `"lower"`).
+---@field lo?    integer|nil                Start index (default `1`).
+---@field hi?    integer|nil                End index, exclusive (default `#list + 1`).
+---@field key?   (fun(val: any): any)|nil   Map each element before comparison.
+---@field bound? ("lower"|"upper")|nil      Search variant (default `"lower"`).
 
 ---Binary search for an insertion point in a sorted list.
 ---
@@ -181,10 +181,10 @@ end
 ---```
 ---
 ---@generic T
----@param list T[]                    Sorted list.
----@param val  T                      Value to search for.
----@param opts? Warp.List.BisectOpts  Options.
----@return integer index              Insertion point.
+---@param list T[]                       Sorted list.
+---@param val  T                         Value to search for.
+---@param opts Warp.List.BisectOpts|nil  Options.
+---@return integer index                 Insertion point.
 M.bisect = function(list, val, opts)
   local lo, hi, key, bound
   if opts then

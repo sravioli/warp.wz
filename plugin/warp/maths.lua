@@ -1,4 +1,4 @@
----@module 'warp.maths'
+---@module "warp.maths"
 
 local min, max = math.min, math.max
 

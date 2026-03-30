@@ -1,4 +1,4 @@
----@module 'warp.string'
+---@module "warp.string"
 
 ---@class Wezterm
 local wt = require "wezterm" --[[@as Wezterm]]
@@ -16,9 +16,16 @@ local col_width = wt.column_width
 ---@class Warp.String
 local M = {}
 
+---Empty string constant.
+---@type string
 M.empty = ""
+
+---Single space constant.
+---@type string
 M.space = " "
 
+---Alias for `wezterm.column_width`.
+---@type fun(s: string): integer
 M.col_width = col_width
 
 ---Strip ANSI/VT escape sequences from a string.
@@ -36,8 +43,8 @@ M.strip_ansi = strip_ansi
 ---contribute to the width) and then calls the WezTerm
 ---internal `column_width()` function.
 ---
----@param s string input string
----@return number column_width
+---@param s string Input string.
+---@return number column_width Visible column width.
 local function width(s)
   -- Fast path: no ESC byte means no ANSI codes to strip
   if not str_find(s, "\27", 1, true) then
@@ -131,17 +138,17 @@ M.trim = function(s)
 end
 
 ---@class SplitOpts
----@field plain?     boolean If `true`, treat `sep` as plain text.
----@field trimempty? boolean If `true`, trim empty edge segments.
+---@field plain?     boolean|nil If `true`, treat `sep` as plain text.
+---@field trimempty? boolean|nil If `true`, trim empty edge segments.
 
 ---Iterate over substrings separated by pattern.
 ---
 ---Returns an iterator yielding substrings from input `s`
 ---separated by `sep`.
 ---
----@param s     string       Input string to split.
----@param sep   string       Separator pattern.
----@param opts? SplitOpts    Optional splitting behavior.
+---@param s    string        Input string to split.
+---@param sep  string        Separator pattern.
+---@param opts SplitOpts|nil Optional splitting behavior.
 ---@return fun(): string|nil iterator
 M.gsplit = function(s, sep, opts)
   local plain, trimempty
@@ -211,9 +218,9 @@ end
 ---
 ---Uses `gsplit` internally.
 ---
----@param s     string       Input string to split.
----@param sep   string       Separator pattern.
----@param opts? SplitOpts    Optional splitting behavior.
+---@param s    string        Input string to split.
+---@param sep  string        Separator pattern.
+---@param opts SplitOpts|nil Optional splitting behavior.
 ---@return string[] parts    List of substrings.
 M.split = function(s, sep, opts)
   local t = {}
@@ -228,10 +235,10 @@ local ELLIPSIS_W = width(ELLIPSIS)
 
 --- Take up to `budget` visible columns from the *left* of `s`.
 --- No ellipsis is added.
----@param  s      string
----@param  budget integer
----@return string
----@return integer columns consumed
+---@param s      string  Input string.
+---@param budget integer Available column budget.
+---@return string left    Left portion of input.
+---@return integer width  Columns consumed.
 local function take_left(s, budget)
   local parts, w = {}, 0
   for cp in s:gmatch "[^\128-\191][\128-\191]*" do
@@ -247,10 +254,10 @@ end
 
 --- Take up to `budget` visible columns from the *right* of `s`.
 --- No ellipsis is added.
----@param  s      string
----@param  budget integer
----@return string
----@return integer columns consumed
+---@param s      string  Input string.
+---@param budget integer Available column budget.
+---@return string right   Right portion of input.
+---@return integer width  Columns consumed.
 local function take_right(s, budget)
   local cps = {}
   for cp in s:gmatch "[^\128-\191][\128-\191]*" do
@@ -282,9 +289,9 @@ end
 ---Truncate from the **right**, appending an ellipsis.
 ---`"plasma-csd-generator.rebupk"` → `"plasma-csd-gen…"`
 ---
----@param  s      string
----@param  budget integer  total columns available (including the ellipsis)
----@return string
+---@param s      string  Input string.
+---@param budget integer Total columns available (including the ellipsis).
+---@return string truncated Truncated string.
 M.truncate_right = function(s, budget)
   if M.fits(s, budget) then
     return s
@@ -298,9 +305,9 @@ end
 ---Truncate from the **left**, prepending an ellipsis.
 ---`"plasma-csd-generator.rebupk"` → `"…ator.rebupk"`
 ---
----@param  s      string
----@param  budget integer  total columns available (including the ellipsis)
----@return string
+---@param s      string  Input string.
+---@param budget integer Total columns available (including the ellipsis).
+---@return string truncated Truncated string.
 M.truncate_left = function(s, budget)
   if M.fits(s, budget) then
     return s
@@ -315,9 +322,9 @@ end
 ---The left side gets the extra column when the budget is odd.
 ---`"plasma-csd-generator.rebupk"` → `"plasma-c…rebupk"`
 ---
----@param  s      string
----@param  budget integer  total columns available (including the ellipsis)
----@return string
+---@param s      string  Input string.
+---@param budget integer Total columns available (including the ellipsis).
+---@return string truncated Truncated string.
 M.truncate_middle = function(s, budget)
   if M.fits(s, budget) then
     return s
@@ -402,10 +409,10 @@ end
 ---Truncate `s` to fit within `budget` columns using the
 ---specified strategy.
 ---
----@param  mode   TruncateMode
----@param  s      string
----@param  budget integer
----@return string
+---@param mode   TruncateMode Truncation strategy.
+---@param s      string       Input string.
+---@param budget integer      Total columns available.
+---@return string truncated   Truncated string.
 M.truncate = function(mode, s, budget)
   local fn = truncators[mode]
   if not fn then

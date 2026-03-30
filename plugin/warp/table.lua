@@ -226,9 +226,9 @@ end
 ---[list.contains](lua://Warp.List.contains) for a faster check on
 ---list-like tables.
 ---
----@param tbl   table                    Table to search.
----@param value any                      Value to find, or predicate.
----@param opts? { predicate?: boolean }  Options.
+---@param tbl   table                        Table to search.
+---@param value any                          Value to find, or predicate.
+---@param opts  { predicate?: boolean }|nil  Options.
 ---@return boolean `true` if `tbl` contains a matching value.
 M.contains = function(tbl, value, opts)
   if opts and opts.predicate then

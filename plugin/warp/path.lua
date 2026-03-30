@@ -17,7 +17,12 @@ local ceil, floor, max = math.ceil, math.floor, math.max
 ---@class Warp.Path
 local M = {}
 
+---Whether the current platform is Windows.
+---@type boolean
 M.is_win = str_find(wt.target_triple, "windows", 1, true) ~= nil
+
+---Platform-specific path separator (`\` on Windows, `/` elsewhere).
+---@type string
 M.separator = M.is_win and "\\" or "/"
 
 ---Normalize a path.
@@ -179,9 +184,9 @@ end
 ---middle. The amount kept per side is the largest value
 ---that fits the `budget`, maximising readability.
 ---
----@param s      string
----@param budget integer  Available columns.
----@return string
+---@param s      string  Input string.
+---@param budget integer Available columns.
+---@return string truncated Truncated string with ellipsis.
 local function truncate_middle(s, budget)
   if col_width(s) <= budget then
     return s
@@ -221,9 +226,9 @@ local function truncate_middle(s, budget)
 end
 
 --- Count occurrences of a literal substring using string.find (JIT-friendly).
----@param s   string
----@param sub string
----@return integer
+---@param s   string  Haystack.
+---@param sub string  Needle to count.
+---@return integer count Number of occurrences.
 local function count_substr(s, sub)
   local n, pos = 0, 1
   while true do
