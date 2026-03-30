@@ -5,9 +5,14 @@ local wt = require "wezterm" --[[@as Wezterm]]
 
 local str_find, str_gsub, str_sub, str_rep =
   string.find, string.gsub, string.sub, string.rep
-local tbl_remove, tbl_insert, table_concat = table.remove, table.insert, table.concat
+local tbl_remove, table_concat = table.remove, table.concat
+local ceil, floor = math.ceil, math.floor
+local huge = math.huge
 
 local maths = require "warp.maths" ---@class Warp.Maths
+local clamp = maths.clamp
+
+local col_width = wt.column_width
 
 ---@class Warp.String
 local M = {}
@@ -15,14 +20,17 @@ local M = {}
 M.empty = ""
 M.space = " "
 
-M.col_width = wt.column_width
+M.col_width = col_width
 
 ---Strip ANSI/VT escape sequences from a string.
 ---@param s string raw rendered string, may contain ANSI colour codes
 ---@return string s
-M.strip_ansi = function(s)
+---@param s string raw rendered string, may contain ANSI colour codes
+---@return string s
+local function strip_ansi(s)
   return (s:gsub("\27%[[\32-\63]*[\64-\126]", ""))
 end
+M.strip_ansi = strip_ansi
 
 ---Calculate visible string width.
 ---
@@ -31,13 +39,14 @@ end
 ---
 ---@param s string input string
 ---@return number column_width
-M.width = function(s)
+local function width(s)
   -- Fast path: no ESC byte means no ANSI codes to strip
   if not str_find(s, "\27", 1, true) then
-    return M.col_width(s)
+    return col_width(s)
   end
-  return M.col_width(M.strip_ansi(s))
+  return col_width(strip_ansi(s))
 end
+M.width = width
 
 ---@alias Warp.String.Padding
 ---| (integer|{ left: integer|nil, right: integer|nil })
@@ -46,22 +55,24 @@ end
 ---@param padding Warp.String.Padding|nil
 ---@return integer left  left padding
 ---@return integer right right padding
+---@param pad number
+---@return number
+local function clamp_pad(pad)
+  return clamp(pad, 0, huge)
+end
+
 local function compute_padding(padding)
   if padding == nil then
     return 1, 1
   end
 
-  local function clamp(pad)
-    return maths.clamp(pad, 0, math.huge)
-  end
-
   local typ = type(padding)
   if typ == "number" then
-    local n = clamp(padding)
+    local n = clamp_pad(padding)
     return n, n
   elseif typ == "table" then
-    local left = padding.left ~= nil and clamp(padding.left) or 0
-    local right = padding.right ~= nil and clamp(padding.right) or 0
+    local left = padding.left ~= nil and clamp_pad(padding.left) or 0
+    local right = padding.right ~= nil and clamp_pad(padding.right) or 0
     return left, right
   end
 
@@ -204,7 +215,7 @@ M.split = function(s, sep, opts)
 end
 
 local ELLIPSIS = "…"
-local ELLIPSIS_W = M.width(ELLIPSIS)
+local ELLIPSIS_W = width(ELLIPSIS)
 
 --- Take up to `budget` visible columns from the *left* of `s`.
 --- No ellipsis is added.
@@ -215,7 +226,7 @@ local ELLIPSIS_W = M.width(ELLIPSIS)
 local function take_left(s, budget)
   local parts, w = {}, 0
   for cp in s:gmatch "[^\128-\191][\128-\191]*" do
-    local cpw = M.width(cp)
+    local cpw = width(cp)
     if w + cpw > budget then
       break
     end
@@ -237,16 +248,17 @@ local function take_right(s, budget)
     cps[#cps + 1] = cp
   end
 
-  local parts, w = {}, 0
+  local start_idx = #cps + 1
+  local w = 0
   for i = #cps, 1, -1 do
-    local cpw = M.width(cps[i])
+    local cpw = width(cps[i])
     if w + cpw > budget then
       break
     end
-    tbl_insert(parts, 1, cps[i])
+    start_idx = i
     w = w + cpw
   end
-  return table_concat(parts), w
+  return table_concat(cps, "", start_idx, #cps), w
 end
 
 ---Return whether `s` already fits within `budget` visible columns.
@@ -255,7 +267,7 @@ end
 ---@param  budget integer
 ---@return boolean
 M.fits = function(s, budget)
-  return M.width(s) <= budget
+  return width(s) <= budget
 end
 
 ---Truncate from the **right**, appending an ellipsis.
@@ -306,8 +318,8 @@ M.truncate_middle = function(s, budget)
   end
 
   local remaining = budget - ELLIPSIS_W
-  local left_n = math.ceil(remaining / 2)
-  local right_n = math.floor(remaining / 2)
+  local left_n = ceil(remaining / 2)
+  local right_n = floor(remaining / 2)
 
   return take_left(s, left_n) .. ELLIPSIS .. take_right(s, right_n)
 end
