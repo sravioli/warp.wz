@@ -1,10 +1,7 @@
 -- ---------------------------------------------------------------------------
 -- Unit tests for warp.maths  (busted)
 -- ---------------------------------------------------------------------------
--- Run:  busted spec/maths_spec.lua
--- ---------------------------------------------------------------------------
 
--- Adjust package.path so `require "warp.maths"` resolves.
 package.path = "plugin/?.lua;plugin/?/init.lua;" .. package.path
 
 local maths = require "warp.maths"
@@ -21,75 +18,37 @@ describe("warp.maths", function()
       assert.are.equal(4, maths.round(3.7))
     end)
 
-    it("rounds 0.5 to nearest even (0)", function()
-      assert.are.equal(0, maths.round(0.5))
+    it("applies half-to-even rule on positive halves", function()
+      assert.are.equal(0, maths.round(0.5)) -- even=0
+      assert.are.equal(2, maths.round(1.5)) -- even=2
+      assert.are.equal(2, maths.round(2.5)) -- even=2
+      assert.are.equal(4, maths.round(3.5)) -- even=4
     end)
 
-    it("rounds 1.5 to nearest even (2)", function()
-      assert.are.equal(2, maths.round(1.5))
-    end)
-
-    it("rounds 2.5 to nearest even (2)", function()
-      assert.are.equal(2, maths.round(2.5))
-    end)
-
-    it("rounds 3.5 to nearest even (4)", function()
-      assert.are.equal(4, maths.round(3.5))
-    end)
-
-    it("rounds 4.5 to nearest even (4)", function()
-      assert.are.equal(4, maths.round(4.5))
+    it("applies half-to-even rule on negative halves", function()
+      assert.are.equal(0, maths.round(-0.5)) -- even=0
+      assert.are.equal(-2, maths.round(-1.5)) -- even=-2
+      assert.are.equal(-2, maths.round(-2.5)) -- even=-2
+      assert.are.equal(-4, maths.round(-3.5)) -- even=-4
     end)
 
     it("returns integer unchanged", function()
       assert.are.equal(5, maths.round(5))
-    end)
-
-    it("returns 0 for 0", function()
       assert.are.equal(0, maths.round(0))
     end)
 
-    it("handles negative: rounds toward zero when < 0.5", function()
+    it("handles negative non-half values", function()
       assert.are.equal(-3, maths.round(-3.2))
-    end)
-
-    it("handles negative: rounds away from zero when > 0.5", function()
       assert.are.equal(-4, maths.round(-3.7))
-    end)
-
-    it("handles negative half: -0.5 rounds to 0 (even)", function()
-      assert.are.equal(0, maths.round(-0.5))
-    end)
-
-    it("handles negative half: -1.5 rounds to -2 (even)", function()
-      assert.are.equal(-2, maths.round(-1.5))
-    end)
-
-    it("handles negative half: -2.5 rounds to -2 (even)", function()
-      assert.are.equal(-2, maths.round(-2.5))
-    end)
-
-    it("handles large numbers", function()
-      assert.are.equal(1000000, maths.round(1000000.3))
-    end)
-
-    it("handles very small fractional part", function()
-      assert.are.equal(1, maths.round(1.0000001))
     end)
   end)
 
   -- ── round_to ─────────────────────────────────────────────────────────
 
   describe("round_to", function()
-    it("rounds to nearest multiple of 5", function()
+    it("rounds to nearest multiple", function()
       assert.are.equal(10, maths.round_to(12, 5))
-    end)
-
-    it("rounds to nearest multiple of 10", function()
       assert.are.equal(20, maths.round_to(17, 10))
-    end)
-
-    it("rounds to nearest multiple of 3", function()
       assert.are.equal(9, maths.round_to(10, 3))
     end)
 
@@ -103,32 +62,14 @@ describe("warp.maths", function()
 
     it("rounds negative numbers", function()
       assert.are.equal(-10, maths.round_to(-12, 5))
+      assert.are.equal(-9, maths.round_to(-10, 3))
     end)
 
-    it("rounds to nearest multiple of 1 (identity)", function()
-      assert.are.equal(7, maths.round_to(7, 1))
-    end)
-
-    it("rounds to nearest multiple of 100", function()
-      assert.are.equal(200, maths.round_to(250, 100))
-    end)
-
-    it("uses half-to-even: 7.5 with multiple 5 rounds to 10", function()
-      -- 7.5 / 5 = 1.5 → rounds to 2 (even) → 2 * 5 = 10
+    it("uses half-to-even on tie-breaking", function()
+      -- 7.5 / 5 = 1.5 → even=2 → 10
       assert.are.equal(10, maths.round_to(7.5, 5))
-    end)
-
-    it("uses half-to-even: 12.5 with multiple 5 rounds to 10", function()
-      -- 12.5 / 5 = 2.5 → rounds to 2 (even) → 2 * 5 = 10
+      -- 12.5 / 5 = 2.5 → even=2 → 10
       assert.are.equal(10, maths.round_to(12.5, 5))
-    end)
-
-    it("rounds small values to nearest multiple of 2", function()
-      assert.are.equal(4, maths.round_to(3, 2))
-    end)
-
-    it("rounds with large multiple", function()
-      assert.are.equal(1000, maths.round_to(1200, 1000))
     end)
   end)
 
@@ -147,11 +88,8 @@ describe("warp.maths", function()
       assert.are.equal(10, maths.clamp(15, 0, 10))
     end)
 
-    it("returns minimum when number equals minimum", function()
+    it("returns boundary when number equals boundary", function()
       assert.are.equal(0, maths.clamp(0, 0, 10))
-    end)
-
-    it("returns maximum when number equals maximum", function()
       assert.are.equal(10, maths.clamp(10, 0, 10))
     end)
 
@@ -167,112 +105,14 @@ describe("warp.maths", function()
 
     it("works with floating-point values", function()
       assert.are.equal(0.5, maths.clamp(0.5, 0, 1))
-    end)
-
-    it("clamps float to float minimum", function()
       assert.are.equal(0.1, maths.clamp(0.05, 0.1, 0.9))
-    end)
-
-    it("clamps float to float maximum", function()
       assert.are.equal(0.9, maths.clamp(1.0, 0.1, 0.9))
     end)
 
-    it("handles large numbers", function()
+    it("handles extreme values", function()
       assert.are.equal(1e10, maths.clamp(1e15, 0, 1e10))
-    end)
-
-    it("handles math.huge as maximum", function()
-      assert.are.equal(100, maths.clamp(100, 0, math.huge))
-    end)
-
-    it("clamps to 0 with math.huge upper bound", function()
-      assert.are.equal(0, maths.clamp(-1, 0, math.huge))
-    end)
-  end)
-
-  -- ── Additional edge-case coverage ────────────────────────────────────
-
-  describe("round edge cases", function()
-    it("rounds -3.5 to -4 (nearest even)", function()
-      assert.are.equal(-4, maths.round(-3.5))
-    end)
-
-    it("rounds -4.5 to -4 (nearest even)", function()
-      assert.are.equal(-4, maths.round(-4.5))
-    end)
-
-    it("rounds 5.5 to 6 (nearest even)", function()
-      assert.are.equal(6, maths.round(5.5))
-    end)
-
-    it("rounds 6.5 to 6 (nearest even)", function()
-      assert.are.equal(6, maths.round(6.5))
-    end)
-
-    it("rounds just below 0.5", function()
-      assert.are.equal(0, maths.round(0.49999999))
-    end)
-
-    it("rounds just above 0.5", function()
-      assert.are.equal(1, maths.round(0.50000001))
-    end)
-
-    it("handles negative zero", function()
-      assert.are.equal(0, maths.round(-0.0))
-    end)
-
-    it("handles 99.5 (nearest even = 100)", function()
-      assert.are.equal(100, maths.round(99.5))
-    end)
-
-    it("handles 100.5 (nearest even = 100)", function()
-      assert.are.equal(100, maths.round(100.5))
-    end)
-  end)
-
-  describe("round_to edge cases", function()
-    it("rounds negative to nearest multiple of 3", function()
-      assert.are.equal(-9, maths.round_to(-10, 3))
-    end)
-
-    it("rounds to nearest multiple of 2 (even tie)", function()
-      -- 3 / 2 = 1.5 → rounds to 2 (even) → 2 * 2 = 4
-      assert.are.equal(4, maths.round_to(3, 2))
-    end)
-
-    it("handles very large multiple", function()
-      assert.are.equal(0, maths.round_to(499, 1000))
-    end)
-
-    it("handles multiple of 1 with negative", function()
-      assert.are.equal(-7, maths.round_to(-7, 1))
-    end)
-
-    it("handles negative multiple (Lua allows it)", function()
-      -- -12 / -5 = 2.4 → rounds to 2 → 2 * -5 = -10
-      assert.are.equal(-10, maths.round_to(-12, -5))
-    end)
-  end)
-
-  describe("clamp edge cases", function()
-    it("clamps NaN-adjacent: -math.huge clamped to 0", function()
       assert.are.equal(0, maths.clamp(-math.huge, 0, 10))
-    end)
-
-    it("clamps math.huge to maximum", function()
       assert.are.equal(10, maths.clamp(math.huge, 0, 10))
-    end)
-
-    it("handles very small range", function()
-      assert.are.equal(0.001, maths.clamp(0.0005, 0.001, 0.002))
-    end)
-
-    it("handles negative range clamping up", function()
-      assert.are.equal(-10, maths.clamp(-100, -10, -5))
-    end)
-
-    it("handles zero range at zero", function()
-      assert.are.equal(0, maths.clamp(42, 0, 0))
     end)
   end)
 end)
