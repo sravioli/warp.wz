@@ -49,12 +49,16 @@ M.platform = function()
   return { os = os_name, is_win = is_win, is_linux = is_linux, is_mac = is_mac }
 end
 
+---Whether the current platform is Windows.
+---@type boolean
 M.is_win = M.platform().is_win
 
 ---User home directory.
 ---
----Resolves via `USERPROFILE`, `HOME`, or WezTerm API. Normalizes backslashes to forward
----slashes.
+---Resolves via `USERPROFILE`, `HOME`, or WezTerm API.
+---Normalizes backslashes to forward slashes.
+---
+---@type string
 M.home = (sgsub((ogetenv "USERPROFILE" or ogetenv "HOME" or wt_home or ""), "\\", "/"))
 
 ---Extract base name from path.

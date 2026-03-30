@@ -3,7 +3,7 @@
 ---@class Wezterm
 local wt = require "wezterm"--[[@as Wezterm]]
 
-local str = require "warp.string" ---@class Warp.String
+local str = require "warp.string" --[[@as Warp.String]]
 
 local col_width = str.col_width
 local str_split = str.split
@@ -56,11 +56,12 @@ M.shorten = function(path, len)
   return short_path
 end
 
---- Keep n chars from each end with an ellipsis in the middle.
---- n is always the largest value that fits the budget, maximising readability.
+---Keep characters from each end with an ellipsis in the
+---middle. The amount kept per side is the largest value
+---that fits the `budget`, maximising readability.
 ---
 ---@param s      string
----@param budget integer  available columns
+---@param budget integer  Available columns.
 ---@return string
 local function truncate_middle(s, budget)
   if col_width(s) <= budget then
@@ -116,6 +117,15 @@ local function count_substr(s, sub)
   end
 end
 
+---Shorten a path to fit within a visible column budget.
+---
+---Abbreviates intermediate directory components, and if
+---the last component still doesn't fit, middle-truncates
+---it. Preserves the general path shape for readability.
+---
+---@param path    string  File or directory path.
+---@param max_len integer Maximum visible column width.
+---@return string shortened Abbreviated path.
 M.shorten_to = function(path, max_len)
   local sep = M.separator
   path = str_gsub(path, "/+$", "")

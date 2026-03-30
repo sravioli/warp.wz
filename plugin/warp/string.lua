@@ -9,7 +9,7 @@ local tbl_remove, table_concat = table.remove, table.concat
 local ceil, floor = math.ceil, math.floor
 local huge = math.huge
 
-local maths = require "warp.maths" ---@class Warp.Maths
+local maths = require "warp.maths" --[[@as Warp.Maths]]
 local clamp = maths.clamp
 
 local col_width = wt.column_width
@@ -23,10 +23,9 @@ M.space = " "
 M.col_width = col_width
 
 ---Strip ANSI/VT escape sequences from a string.
----@param s string raw rendered string, may contain ANSI colour codes
----@return string s
----@param s string raw rendered string, may contain ANSI colour codes
----@return string s
+---
+---@param s string Raw rendered string, may contain ANSI codes.
+---@return string s String with ANSI sequences removed.
 local function strip_ansi(s)
   return (s:gsub("\27%[[\32-\63]*[\64-\126]", ""))
 end
@@ -34,8 +33,9 @@ M.strip_ansi = strip_ansi
 
 ---Calculate visible string width.
 ---
----Strips any ANSI escape sequences (otherwise they would contribute to the width) and then
----call the WezTerm internal `column_width()` function.
+---Strips any ANSI escape sequences (otherwise they would
+---contribute to the width) and then calls the WezTerm
+---internal `column_width()` function.
 ---
 ---@param s string input string
 ---@return number column_width
@@ -51,16 +51,19 @@ M.width = width
 ---@alias Warp.String.Padding
 ---| (integer|{ left: integer|nil, right: integer|nil })
 
----Normalize padding into left/right integers (>= 0).
----@param padding Warp.String.Padding|nil
----@return integer left  left padding
----@return integer right right padding
----@param pad number
----@return number
+---Clamp a single padding value to `[0, huge]`.
+---
+---@param pad number Padding value.
+---@return number pad Clamped value.
 local function clamp_pad(pad)
   return clamp(pad, 0, huge)
 end
 
+---Normalize padding into left/right integers (>= 0).
+---
+---@param padding Warp.String.Padding|nil Padding spec.
+---@return integer left  Left padding.
+---@return integer right Right padding.
 local function compute_padding(padding)
   if padding == nil then
     return 1, 1
@@ -81,9 +84,11 @@ end
 
 ---Pad string on both sides.
 ---
----Converts input to string if necessary and adds whitespace to both sides. It adds a single
----whitespace character by default but respects `nil` values when `padding` is a table (eg.
----given `{ left = 1, right = nil }` it won't add any right padding).
+---Converts input to string if necessary and adds
+---whitespace to both sides. Adds a single whitespace by
+---default but respects `nil` values when `padding` is a
+---table (e.g. `{ left = 1, right = nil }` won't add any
+---right padding).
 ---
 ---@param s       string|any              Input value to pad.
 ---@param padding Warp.String.Padding|nil Spaces to add per side. Defaults to `1`.
@@ -126,14 +131,19 @@ M.trim = function(s)
   return (str_gsub(s, "^%s*(.-)%s*$", "%1"))
 end
 
+---@class SplitOpts
+---@field plain?     boolean If `true`, treat `sep` as plain text.
+---@field trimempty? boolean If `true`, trim empty edge segments.
+
 ---Iterate over substrings separated by pattern.
 ---
----Returns iterator yielding substrings from input `s` separated by `sep`.
+---Returns an iterator yielding substrings from input `s`
+---separated by `sep`.
 ---
----@param s     string          Input string to split.
----@param sep   string          Separator pattern.
----@param opts? SplitOpts|table Optional splitting behavior.
----@return fun(): string|nil iterator Iterator returning next substring or nil.
+---@param s     string       Input string to split.
+---@param sep   string       Separator pattern.
+---@param opts? SplitOpts    Optional splitting behavior.
+---@return fun(): string|nil iterator
 M.gsplit = function(s, sep, opts)
   local plain, trimempty
   opts = opts or {}
@@ -202,10 +212,10 @@ end
 ---
 ---Uses `gsplit` internally.
 ---
----@param s     string          Input string to split.
----@param sep   string          Separator pattern.
----@param opts? SplitOpts|table Optional splitting behavior.
----@return string[] parts       List of substrings.
+---@param s     string       Input string to split.
+---@param sep   string       Separator pattern.
+---@param opts? SplitOpts    Optional splitting behavior.
+---@return string[] parts    List of substrings.
 M.split = function(s, sep, opts)
   local t = {}
   for c in M.gsplit(s, sep, opts) do
@@ -324,7 +334,10 @@ M.truncate_middle = function(s, budget)
   return take_left(s, left_n) .. ELLIPSIS .. take_right(s, right_n)
 end
 
----Truncate `s` to fit within `budget` columns using the specified strategy.
+---@alias TruncateMode "left"|"middle"|"right"
+
+---Truncate `s` to fit within `budget` columns using the
+---specified strategy.
 ---
 ---@param  s      string
 ---@param  budget integer
