@@ -3,11 +3,6 @@
 ---@class Wezterm
 local wt = require "wezterm" --[[@as Wezterm]]
 
----@class Memo.Api
-local memo = wt.plugin.require "https://github.com/sravioli/memo.wz"
-memo.cache.configure { ttl = nil, stats = false, debug = false }
-local cache = memo.cache.namespace "warp.string" ---@class Memo.Cache
-
 local str_find, str_format, str_gsub, str_sub, str_rep =
   string.find, string.format, string.gsub, string.sub, string.rep
 local tbl_remove, tbl_insert, table_concat = table.remove, table.insert, table.concat
@@ -201,16 +196,14 @@ end
 ---@param opts? SplitOpts|table Optional splitting behavior.
 ---@return string[] parts       List of substrings.
 M.split = function(s, sep, opts)
-  return cache.compute("str.split", function()
-    local t = {}
-    for c in M.gsplit(s, sep, opts) do
-      t[#t + 1] = c
-    end
-    return t
-  end, s, sep, opts)
+  local t = {}
+  for c in M.gsplit(s, sep, opts) do
+    t[#t + 1] = c
+  end
+  return t
 end
 
-local ELLIPSIS = require("utils.icons").Ellipsis
+local ELLIPSIS = "…"
 local ELLIPSIS_W = M.width(ELLIPSIS)
 
 --- Take up to `budget` visible columns from the *left* of `s`.

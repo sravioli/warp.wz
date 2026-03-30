@@ -3,16 +3,10 @@
 ---@class Wezterm
 local wt = require "wezterm"--[[@as Wezterm]]
 
----@class Memo.Api
-local memo = wt.plugin.require "https://github.com/sravioli/memo.wz"
-memo.cache.configure { ttl = nil, stats = false, debug = false }
-local cache = memo.cache.namespace "warp.path" ---@class Memo.Cache
-
 ---@class Warp.Path
 local M = {}
 
-cache.set("separator", M.is_win and "\\" or "/")
-M.separator = cache.get "separator"
+M.separator = M.is_win and "\\" or "/"
 
 ---Abbreviate path by shortening intermediate components to specified length.
 ---
@@ -20,36 +14,34 @@ M.separator = cache.get "separator"
 ---@param len integer  Number of characters to keep per component.
 ---@return string shortened Abbreviated path.
 M.shorten = function(path, len)
-  return cache.compute("shorten", function()
-    local sep = M.separator
-    local root_path = path:sub(1, 1) == sep
-    if root_path then
-      path = path:sub(2)
-    end
+  local sep = M.separator
+  local root_path = path:sub(1, 1) == sep
+  if root_path then
+    path = path:sub(2)
+  end
 
-    local parts = str.split(path, sep)
-    local last = #parts
-    local result = {}
+  local parts = str.split(path, sep)
+  local last = #parts
+  local result = {}
 
-    for i = 1, last do
-      local part = parts[i]
-      if i == last then
-        result[i] = part
-      else
-        local short = string.sub(part, 1, len)
-        if short == "" then
-          break
-        end
-        result[i] = short
+  for i = 1, last do
+    local part = parts[i]
+    if i == last then
+      result[i] = part
+    else
+      local short = string.sub(part, 1, len)
+      if short == "" then
+        break
       end
+      result[i] = short
     end
+  end
 
-    local short_path = table.concat(result, sep)
-    if root_path then
-      short_path = sep .. short_path
-    end
-    return short_path
-  end, path, len)
+  local short_path = table.concat(result, sep)
+  if root_path then
+    short_path = sep .. short_path
+  end
+  return short_path
 end
 
 --- Keep n chars from each end with an ellipsis in the middle.

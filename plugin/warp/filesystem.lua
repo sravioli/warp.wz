@@ -4,11 +4,6 @@
 local wt = require "wezterm"--[[@as Wezterm]]
 local wt_home, wt_hostname, wt_triple = wt.home, wt.hostname, wt.target_triple
 
----@class Memo.Api
-local memo = wt.plugin.require "https://github.com/sravioli/memo.wz"
-memo.cache.configure { ttl = nil, stats = false, debug = false }
-local cache = memo.cache.namespace "warp.fs" ---@class Memo.Cache
-
 local ioclose, ioopen = io.close, io.open
 local ogetenv = os.getenv
 local tconcat = table.concat
@@ -24,40 +19,37 @@ local M = {}
 ---Class logger
 M.log = require("utils.logger").new "Fn.FileSystem"
 
-cache.set("target-triple", wt_triple)
 ---@package
-M.target_triple = cache.get "target-triple"
+M.target_triple = wt_triple
 
 ---Get platform information.
 ---
 ---Identifies OS based on target triple. Memoized for performance.
 ---
 ---@return Fn.FileSystem.Platform platform Platform details (OS name, boolean flags).
+local _platform
 M.platform = function()
-  return cache.compute("platform", function()
-    local is_win = sfind(M.target_triple, "windows", 1, true) ~= nil
-    local is_linux = sfind(M.target_triple, "linux", 1, true) ~= nil
-    local is_mac = sfind(M.target_triple, "apple", 1, true) ~= nil
-    local os_name = is_win and "windows"
-      or is_linux and "linux"
-      or is_mac and "mac"
-      or "unknown"
-    return { os = os_name, is_win = is_win, is_linux = is_linux, is_mac = is_mac }
-  end)
+  if _platform then
+    return _platform
+  end
+  local is_win = sfind(M.target_triple, "windows", 1, true) ~= nil
+  local is_linux = sfind(M.target_triple, "linux", 1, true) ~= nil
+  local is_mac = sfind(M.target_triple, "apple", 1, true) ~= nil
+  local os_name = is_win and "windows"
+    or is_linux and "linux"
+    or is_mac and "mac"
+    or "unknown"
+  _platform = { os = os_name, is_win = is_win, is_linux = is_linux, is_mac = is_mac }
+  return _platform
 end
 
-cache.set("is-win", M.platform().is_win)
-M.is_win = cache.get "is-win"
+M.is_win = M.platform().is_win
 
-cache.set(
-  "home",
-  (sgsub((ogetenv "USERPROFILE" or ogetenv "HOME" or wt_home or ""), "\\", "/"))
-)
 ---User home directory.
 ---
 ---Resolves via `USERPROFILE`, `HOME`, or WezTerm API. Normalizes backslashes to forward
 ---slashes.
-M.home = cache.get "home"
+M.home = (sgsub((ogetenv "USERPROFILE" or ogetenv "HOME" or wt_home or ""), "\\", "/"))
 
 ---Extract base name from path.
 ---
@@ -85,23 +77,29 @@ end
 ---
 ---@param directory string Starting directory path.
 ---@return string|nil git_root Root directory of the git repo, or nil if not found.
+local _git_dir_cache = {}
 M.find_git_dir = function(directory)
-  return cache.compute("find-git-dir", function()
-    directory = sgsub(directory, "~", M.home)
-    while directory do
-      local handle = ioopen(directory .. "/.git/HEAD", "r")
-      if handle then
-        ioclose(handle)
-        return (directory:gsub(M.home, "~"))
-      elseif directory == "/" or directory == "" then
-        break
-      else
-        directory = smatch(directory, "(.+)/[^/]*")
-      end
+  local cached = _git_dir_cache[directory]
+  if cached ~= nil then
+    return cached or nil
+  end
+  local dir = sgsub(directory, "~", M.home)
+  while dir do
+    local handle = ioopen(dir .. "/.git/HEAD", "r")
+    if handle then
+      ioclose(handle)
+      local result = (dir:gsub(M.home, "~"))
+      _git_dir_cache[directory] = result
+      return result
+    elseif dir == "/" or dir == "" then
+      break
+    else
+      dir = smatch(dir, "(.+)/[^/]*")
     end
+  end
 
-    return nil
-  end, directory)
+  _git_dir_cache[directory] = false
+  return nil
 end
 
 ---Get the hostname associated with the given pane.
