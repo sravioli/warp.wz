@@ -19,6 +19,6 @@ release = { changelog_title = "Releases" }
 path = "CHANGELOG.md"
 template = "remote"
 remote = "github.com"
-repository = "cog.wz"
+repository = "warp.wz"
 owner = "sravioli"
 authors = [{ signature = "Simone Fidanza", username = "sravioli" }]
