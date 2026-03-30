@@ -5,8 +5,7 @@ local cartesian_iter = list.cartesian_iter
 
 local ITERATIONS_HEAVY = 1e4
 
-local suite =
-  chrono.suite("list.cartesian_iter", { iterations = ITERATIONS_HEAVY, warmup = 100 })
+local suite = chrono.suite("list.cartesian_iter", { iterations = ITERATIONS_HEAVY, warmup = 100 })
 
 local cart_small = { { 1, 2 }, { "a", "b" } }
 local cart_medium = { { 1, 2, 3 }, { "a", "b", "c" }, { true, false } }

@@ -62,7 +62,7 @@ describe("path + string integration", function()
       local result = path.shorten_to("src/components/MyVeryLongComponentName.tsx", 20)
       assert.is_true(str.col_width(result) <= 20)
       -- Result should still contain "/" separators showing path structure
-      assert.is_truthy(result:find("/"))
+      assert.is_truthy(result:find "/")
     end)
 
     it("column budget is respected for unicode paths", function()

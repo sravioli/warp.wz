@@ -8,8 +8,8 @@ package.loaded["wezterm"] = require "spec.mocks.wezterm"
 package.path = "plugin/?.lua;plugin/?/init.lua;" .. package.path
 
 local maths = require "warp.maths"
-local str = require "warp.string"
 local path = require "warp.path"
+local str = require "warp.string"
 
 describe("path + string + maths full-stack integration", function()
   -- ── Padding then truncation pipeline ─────────────────────────────────
@@ -100,7 +100,7 @@ describe("path + string + maths full-stack integration", function()
       local short = path.shorten_to(cwd, tab_width)
       assert.is_true(str.col_width(short) <= tab_width)
       -- Should still look like a path
-      assert.is_truthy(short:find("/"))
+      assert.is_truthy(short:find "/")
     end)
 
     it("formats and pads a short name for a wide tab", function()

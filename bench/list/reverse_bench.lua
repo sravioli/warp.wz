@@ -5,8 +5,7 @@ local reverse = list.reverse
 
 local ITERATIONS_ALLOC = 1e5
 
-local suite =
-  chrono.suite("list.reverse", { iterations = ITERATIONS_ALLOC, warmup = 100 })
+local suite = chrono.suite("list.reverse", { iterations = ITERATIONS_ALLOC, warmup = 100 })
 
 suite:add("reverse small (5)", function()
   local t = { 1, 2, 3, 4, 5 }
