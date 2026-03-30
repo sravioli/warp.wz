@@ -88,6 +88,10 @@ column widths via WezTerm's `column_width()`.
 | `truncate_left(s, budget)`   | Truncate from left with ellipsis.                 |
 | `truncate_middle(s, budget)` | Truncate from middle with ellipsis.               |
 | `truncate(mode, s, budget)`  | Truncate using strategy: `left`/`middle`/`right`. |
+| `starts_with(s, prefix)`     | Check if string starts with prefix.               |
+| `ends_with(s, suffix)`       | Check if string ends with suffix.                 |
+| `ljust(s, width, ch?)`       | Left-justify to total column width.               |
+| `rjust(s, width, ch?)`       | Right-justify to total column width.              |
 
 ## Table
 
@@ -115,6 +119,8 @@ merging, and sorted iteration.
 | `extend(behavior, ...)`       | Merge tables (`error`/`keep`/`force`).      |
 | `deep_extend(behavior, ...)`  | Recursive merge of hash-like sub-tables.    |
 | `spairs(tbl)`                 | Sorted key-value iterator.                  |
+| `invert(tbl)`                 | Swap keys ↔ values.                         |
+| `reduce(tbl, fn, init)`       | Fold table into a single value.             |
 
 ## Maths
 
@@ -145,6 +151,9 @@ Sequence-oriented utilities operating on the array portion of tables.
 | `cartesian_iter(sets)`           | Iterator over Cartesian product (shared table). |
 | `cartesian_iter_copy(sets)`      | Iterator over Cartesian product (copied table). |
 | `cartesian(sets)`                | All Cartesian product combinations.             |
+| `find(list, fn)`                 | First element matching predicate.               |
+| `flatten(list, depth?)`          | Flatten nested lists.                           |
+| `zip(...)`                       | Combine parallel lists into tuples.             |
 
 ## Filesystem
 
@@ -168,6 +177,8 @@ pane URI parsing for WezTerm.
 | `get_hostname(pane)`                | Hostname from pane URI (title-cased, domain removed). |
 | `get_cwd(pane, search_git_root?)`   | CWD from pane URI, optionally resolved to git root.   |
 | `get_cwd_hostname(pane, git_root?)` | _(Deprecated)_ Returns both CWD and hostname.         |
+| `is_dir(path)`                      | Check whether path is a directory.                    |
+| `read_file(path)`                   | Read entire contents of a small file.                 |
 
 ## Path
 
@@ -187,6 +198,11 @@ Path abbreviation and column-budget-aware truncation.
 | `shorten(path, len)`        | Abbreviate intermediate components to `len` chars. |
 | `shorten_to(path, max_len)` | Shorten path to fit within column budget.          |
 | `concat(...)`               | Join components with platform separator.           |
+| `normalize(path)`           | Collapse `.`, `..`, repeated separators.           |
+| `dirname(path)`             | Parent directory of a path.                        |
+| `extension(path)`           | File extension including leading dot.              |
+| `is_absolute(path)`         | Check whether path is absolute.                    |
+| `expand(path)`              | Expand `~` to home directory.                      |
 
 ## Examples
 

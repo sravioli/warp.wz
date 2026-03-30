@@ -408,6 +408,42 @@ M.deep_extend = function(behavior, ...)
   return tbl_extend_rec(behavior, true, ...)
 end
 
+---Swap keys and values of a table.
+---
+---Creates a new table where each value becomes a key and
+---its former key becomes the value. When multiple keys share
+---the same value, one of them wins arbitrarily.
+---
+---@generic K, V
+---@param tbl table<K, V> Table to invert.
+---@return table<V, K>    inverted Inverted table.
+M.invert = function(tbl)
+  local result = {}
+  for k, v in pairs(tbl) do
+    result[v] = k
+  end
+  return result
+end
+
+---Fold a table into a single value.
+---
+---Iterates all entries via `pairs()` and accumulates a result
+---by calling `fn(acc, value, key)` for each entry. The order
+---is not guaranteed (follows `pairs()` traversal).
+---
+---@generic V, R
+---@param tbl  table<any, V>                  Table to reduce.
+---@param fn   fun(acc: R, value: V, key: any): R Reducer.
+---@param init R                              Initial accumulator.
+---@return R   result Final accumulated value.
+M.reduce = function(tbl, fn, init)
+  local acc = init
+  for k, v in pairs(tbl) do
+    acc = fn(acc, v, k)
+  end
+  return acc
+end
+
 ---Iterate key-value pairs in sorted key order.
 ---
 ---Returns an iterator suitable for `for`-`in` loops. Keys are

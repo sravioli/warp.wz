@@ -520,4 +520,68 @@ describe("warp.filesystem", function()
       assert.are.equal("Mybox", hostname)
     end)
   end)
+
+  -- ── is_dir ───────────────────────────────────────────────────────────
+
+  describe("is_dir", function()
+    it("returns true for a known directory", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+        io_open = function(path)
+          if path == "/some/dir/." then
+            return {}
+          end
+          return nil
+        end,
+        io_close = function() end,
+      }
+      assert.is_true(fs.is_dir "/some/dir")
+    end)
+
+    it("returns false for non-existent path", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+        io_open = function()
+          return nil
+        end,
+      }
+      assert.is_false(fs.is_dir "/no/such/thing")
+    end)
+  end)
+
+  -- ── read_file ────────────────────────────────────────────────────────
+
+  describe("read_file", function()
+    it("reads file contents", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+        io_open = function(path, mode)
+          if path == "/some/file.txt" and mode == "r" then
+            return {
+              read = function(_, fmt)
+                return "hello contents"
+              end,
+            }
+          end
+          return nil
+        end,
+        io_close = function() end,
+      }
+      assert.are.equal("hello contents", fs.read_file "/some/file.txt")
+    end)
+
+    it("returns nil when file cannot be opened", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+        io_open = function()
+          return nil
+        end,
+      }
+      assert.is_nil(fs.read_file "/no/such/file")
+    end)
+  end)
 end)

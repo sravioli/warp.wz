@@ -542,4 +542,61 @@ describe("warp.table", function()
       assert.are.same({}, collect_pairs(tbl.spairs {}))
     end)
   end)
+
+  -- ── invert ───────────────────────────────────────────────────────────
+
+  describe("invert", function()
+    it("swaps keys and values", function()
+      assert.are.same({ a = 1, b = 2 }, tbl.invert { "a", "b" })
+    end)
+
+    it("handles string keys", function()
+      local result = tbl.invert { x = "alpha", y = "beta" }
+      assert.are.equal("x", result.alpha)
+      assert.are.equal("y", result.beta)
+    end)
+
+    it("returns empty table for empty input", function()
+      assert.are.same({}, tbl.invert {})
+    end)
+
+    it("last key wins for duplicate values", function()
+      local result = tbl.invert { a = 1, b = 1 }
+      -- One of "a" or "b" wins; just check the value is correct type
+      assert.is_string(result[1])
+    end)
+  end)
+
+  -- ── reduce ───────────────────────────────────────────────────────────
+
+  describe("reduce", function()
+    it("sums values of a list", function()
+      assert.are.equal(10, tbl.reduce({ 1, 2, 3, 4 }, function(acc, v)
+        return acc + v
+      end, 0))
+    end)
+
+    it("concatenates string values", function()
+      -- Order not guaranteed via pairs, so test with a single-element table.
+      assert.are.equal("xhello", tbl.reduce({ a = "hello" }, function(acc, v)
+        return acc .. v
+      end, "x"))
+    end)
+
+    it("returns init for empty table", function()
+      assert.are.equal(42, tbl.reduce({}, function(acc, v)
+        return acc + v
+      end, 42))
+    end)
+
+    it("passes key to reducer", function()
+      local keys = {}
+      tbl.reduce({ a = 1, b = 2 }, function(acc, v, k)
+        keys[#keys + 1] = k
+        return acc
+      end, 0)
+      table.sort(keys)
+      assert.are.same({ "a", "b" }, keys)
+    end)
+  end)
 end)

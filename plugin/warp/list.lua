@@ -218,6 +218,85 @@ M.reverse = function(list)
   return list
 end
 
+---Find the first element matching a predicate.
+---
+---Scans the array portion (`1` to `#list`) and returns the first
+---element for which `fn` returns a truthy value, along with its
+---index. Returns `nil` if no match is found.
+---
+---@generic T
+---@param list T[]             List to search.
+---@param fn   fun(v: T): any  Predicate function.
+---@return T|nil value         First matching element, or `nil`.
+---@return integer|nil index   Index of the match, or `nil`.
+M.find = function(list, fn)
+  local n = #list
+  for i = 1, n do
+    if fn(list[i]) then
+      return list[i], i
+    end
+  end
+  return nil, nil
+end
+
+---Flatten a nested list.
+---
+---Recursively flattens sub-lists up to `depth` levels deep.
+---When `depth` is `nil`, flattens completely.
+---
+---@generic T
+---@param list  any[]        List to flatten.
+---@param depth integer|nil  Maximum nesting depth (default: unlimited).
+---@return T[]  flat         New flattened list.
+M.flatten = function(list, depth)
+  local result = {}
+  local n = 0
+  local function _flatten(t, d)
+    for i = 1, #t do
+      local v = t[i]
+      if type(v) == "table" and (d == nil or d > 0) then
+        _flatten(v, d and d - 1 or nil)
+      else
+        n = n + 1
+        result[n] = v
+      end
+    end
+  end
+  _flatten(list, depth)
+  return result
+end
+
+---Zip parallel lists into a list of tuples.
+---
+---Combines elements at the same index from each input list.
+---Stops at the length of the shortest list.
+---
+---@param ... any[][] Lists to zip.
+---@return any[][] tuples List of tuples.
+M.zip = function(...)
+  local sets = { ... }
+  local count = #sets
+  if count == 0 then
+    return {}
+  end
+  local min_len = #sets[1]
+  for i = 2, count do
+    local l = #sets[i]
+    if l < min_len then
+      min_len = l
+    end
+  end
+  local result = {}
+  for i = 1, min_len do
+    local tuple = {}
+    for j = 1, count do
+      tuple[j] = sets[j][i]
+    end
+    result[i] = tuple
+  end
+  return result
+end
+
 ---Compute Cartesian product of multiple lists (iterator).
 ---
 ---Returns an iterator yielding each combination as a shared table.

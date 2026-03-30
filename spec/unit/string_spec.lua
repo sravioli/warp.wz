@@ -363,4 +363,108 @@ describe("warp.string", function()
       end, "invalid truncate mode: nil")
     end)
   end)
+
+  -- ── starts_with ──────────────────────────────────────────────────────
+
+  describe("starts_with", function()
+    it("returns true for matching prefix", function()
+      assert.is_true(str.starts_with("hello world", "hello"))
+    end)
+
+    it("returns false for non-matching prefix", function()
+      assert.is_false(str.starts_with("hello world", "world"))
+    end)
+
+    it("returns true for empty prefix", function()
+      assert.is_true(str.starts_with("hello", ""))
+    end)
+
+    it("returns true for exact match", function()
+      assert.is_true(str.starts_with("hello", "hello"))
+    end)
+
+    it("returns false when prefix is longer", function()
+      assert.is_false(str.starts_with("hi", "hello"))
+    end)
+
+    it("returns true for empty string with empty prefix", function()
+      assert.is_true(str.starts_with("", ""))
+    end)
+  end)
+
+  -- ── ends_with ────────────────────────────────────────────────────────
+
+  describe("ends_with", function()
+    it("returns true for matching suffix", function()
+      assert.is_true(str.ends_with("hello world", "world"))
+    end)
+
+    it("returns false for non-matching suffix", function()
+      assert.is_false(str.ends_with("hello world", "hello"))
+    end)
+
+    it("returns true for empty suffix", function()
+      assert.is_true(str.ends_with("hello", ""))
+    end)
+
+    it("returns true for exact match", function()
+      assert.is_true(str.ends_with("hello", "hello"))
+    end)
+
+    it("returns false when suffix is longer", function()
+      assert.is_false(str.ends_with("hi", "hello"))
+    end)
+
+    it("returns true for empty string with empty suffix", function()
+      assert.is_true(str.ends_with("", ""))
+    end)
+  end)
+
+  -- ── ljust ────────────────────────────────────────────────────────────
+
+  describe("ljust", function()
+    it("pads short string to target width", function()
+      assert.are.equal("hi   ", str.ljust("hi", 5))
+    end)
+
+    it("returns string unchanged when already at width", function()
+      assert.are.equal("hello", str.ljust("hello", 5))
+    end)
+
+    it("returns string unchanged when wider than target", function()
+      assert.are.equal("hello world", str.ljust("hello world", 5))
+    end)
+
+    it("uses custom padding character", function()
+      assert.are.equal("hi...", str.ljust("hi", 5, "."))
+    end)
+
+    it("handles zero width", function()
+      assert.are.equal("hi", str.ljust("hi", 0))
+    end)
+  end)
+
+  -- ── rjust ────────────────────────────────────────────────────────────
+
+  describe("rjust", function()
+    it("pads short string to target width", function()
+      assert.are.equal("   hi", str.rjust("hi", 5))
+    end)
+
+    it("returns string unchanged when already at width", function()
+      assert.are.equal("hello", str.rjust("hello", 5))
+    end)
+
+    it("returns string unchanged when wider than target", function()
+      assert.are.equal("hello world", str.rjust("hello world", 5))
+    end)
+
+    it("uses custom padding character", function()
+      assert.are.equal("...hi", str.rjust("hi", 5, "."))
+    end)
+
+    it("handles zero width", function()
+      assert.are.equal("hi", str.rjust("hi", 0))
+    end)
+  end)
 end)

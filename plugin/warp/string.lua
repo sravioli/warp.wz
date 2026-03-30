@@ -342,6 +342,63 @@ local truncators = {
   right = M.truncate_right,
 }
 
+---Check whether `s` starts with the given prefix.
+---
+---@param s      string Input string.
+---@param prefix string Prefix to test.
+---@return boolean
+M.starts_with = function(s, prefix)
+  return str_sub(s, 1, #prefix) == prefix
+end
+
+---Check whether `s` ends with the given suffix.
+---
+---@param s      string Input string.
+---@param suffix string Suffix to test.
+---@return boolean
+M.ends_with = function(s, suffix)
+  if suffix == "" then
+    return true
+  end
+  return str_sub(s, -#suffix) == suffix
+end
+
+---Left-justify `s` to a total visible width.
+---
+---Pads on the right so the result is at least `total_width`
+---columns wide. If `s` already meets or exceeds the width,
+---it is returned unchanged.
+---
+---@param s           string      Input string.
+---@param total_width integer     Desired total column width.
+---@param ch          string|nil  Padding character (default `" "`).
+---@return string
+M.ljust = function(s, total_width, ch)
+  local w = width(s)
+  if w >= total_width then
+    return s
+  end
+  return s .. str_rep(ch or M.space, total_width - w)
+end
+
+---Right-justify `s` to a total visible width.
+---
+---Pads on the left so the result is at least `total_width`
+---columns wide. If `s` already meets or exceeds the width,
+---it is returned unchanged.
+---
+---@param s           string      Input string.
+---@param total_width integer     Desired total column width.
+---@param ch          string|nil  Padding character (default `" "`).
+---@return string
+M.rjust = function(s, total_width, ch)
+  local w = width(s)
+  if w >= total_width then
+    return s
+  end
+  return str_rep(ch or M.space, total_width - w) .. s
+end
+
 ---Truncate `s` to fit within `budget` columns using the
 ---specified strategy.
 ---

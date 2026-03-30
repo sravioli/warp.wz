@@ -148,4 +148,191 @@ describe("warp.path", function()
       assert.are.equal("/", path.concat("", ""))
     end)
   end)
+
+  -- ── normalize ────────────────────────────────────────────────────────
+
+  describe("normalize", function()
+    it("collapses repeated slashes", function()
+      assert.are.equal("/home/user", path.normalize "//home///user")
+    end)
+
+    it("resolves single dot", function()
+      assert.are.equal("home/user", path.normalize "home/./user")
+    end)
+
+    it("resolves double dot", function()
+      assert.are.equal("/home", path.normalize "/home/user/..")
+    end)
+
+    it("resolves complex relative path", function()
+      assert.are.equal("a/d", path.normalize "a/b/c/../../d")
+    end)
+
+    it("preserves leading tilde", function()
+      assert.are.equal("~/projects", path.normalize "~/./projects")
+    end)
+
+    it("normalizes backslashes", function()
+      assert.are.equal("/home/user", path.normalize "\\home\\user")
+    end)
+
+    it("does not go above root", function()
+      assert.are.equal("/", path.normalize "/../..")
+    end)
+
+    it("returns dot for empty result", function()
+      assert.are.equal(".", path.normalize "")
+    end)
+
+    it("keeps .. for relative paths above cwd", function()
+      assert.are.equal("../..", path.normalize "a/../../..")
+    end)
+
+    it("handles root path", function()
+      assert.are.equal("/", path.normalize "/")
+    end)
+
+    it("handles tilde alone", function()
+      assert.are.equal("~", path.normalize "~")
+    end)
+
+    it("handles tilde with trailing slash", function()
+      assert.are.equal("~", path.normalize "~/")
+    end)
+  end)
+
+  -- ── dirname ──────────────────────────────────────────────────────────
+
+  describe("dirname", function()
+    it("returns parent of file path", function()
+      assert.are.equal("/home/user", path.dirname "/home/user/file.txt")
+    end)
+
+    it("returns parent of directory path", function()
+      assert.are.equal("/home", path.dirname "/home/user/")
+    end)
+
+    it("returns / for root-level file", function()
+      assert.are.equal("/", path.dirname "/file.txt")
+    end)
+
+    it("returns . for bare filename", function()
+      assert.are.equal(".", path.dirname "file.txt")
+    end)
+
+    it("returns . for empty string", function()
+      assert.are.equal(".", path.dirname "")
+    end)
+
+    it("handles tilde path", function()
+      assert.are.equal("~/projects", path.dirname "~/projects/repo")
+    end)
+
+    it("handles backslashes", function()
+      assert.are.equal("home/user", path.dirname "home\\user\\file.txt")
+    end)
+
+    it("returns / for root", function()
+      assert.are.equal("/", path.dirname "/")
+    end)
+  end)
+
+  -- ── extension ────────────────────────────────────────────────────────
+
+  describe("extension", function()
+    it("returns extension with dot", function()
+      assert.are.equal(".lua", path.extension "init.lua")
+    end)
+
+    it("returns last extension for double extension", function()
+      assert.are.equal(".gz", path.extension "archive.tar.gz")
+    end)
+
+    it("returns empty for no extension", function()
+      assert.are.equal("", path.extension "Makefile")
+    end)
+
+    it("returns empty for dotfile without extension", function()
+      assert.are.equal("", path.extension ".gitignore")
+    end)
+
+    it("returns extension for dotfile with extension", function()
+      assert.are.equal(".md", path.extension ".readme.md")
+    end)
+
+    it("works with full path", function()
+      assert.are.equal(".toml", path.extension "/home/user/config.toml")
+    end)
+
+    it("returns empty for trailing dot", function()
+      assert.are.equal("", path.extension "file.")
+    end)
+
+    it("returns empty for empty string", function()
+      assert.are.equal("", path.extension "")
+    end)
+  end)
+
+  -- ── is_absolute ──────────────────────────────────────────────────────
+
+  describe("is_absolute", function()
+    it("detects unix absolute path", function()
+      assert.is_true(path.is_absolute "/home/user")
+    end)
+
+    it("detects relative path", function()
+      assert.is_false(path.is_absolute "home/user")
+    end)
+
+    it("detects windows drive letter with backslash", function()
+      assert.is_true(path.is_absolute "C:\\Users")
+    end)
+
+    it("detects windows drive letter with forward slash", function()
+      assert.is_true(path.is_absolute "C:/Users")
+    end)
+
+    it("rejects bare drive letter without separator", function()
+      assert.is_false(path.is_absolute "C:file")
+    end)
+
+    it("rejects tilde as not absolute", function()
+      assert.is_false(path.is_absolute "~/projects")
+    end)
+
+    it("rejects empty string", function()
+      assert.is_false(path.is_absolute "")
+    end)
+
+    it("detects lowercase windows drive", function()
+      assert.is_true(path.is_absolute "d:/data")
+    end)
+  end)
+
+  -- ── expand ───────────────────────────────────────────────────────────
+
+  describe("expand", function()
+    it("expands tilde to home directory", function()
+      local result = path.expand "~/projects"
+      assert.is_true(result:find("/projects$") ~= nil)
+      assert.is_true(result:sub(1, 1) ~= "~")
+    end)
+
+    it("expands bare tilde", function()
+      local result = path.expand "~"
+      assert.is_true(result ~= "~")
+    end)
+
+    it("does not expand tilde in the middle", function()
+      assert.are.equal("/home/~user", path.expand "/home/~user")
+    end)
+
+    it("returns non-tilde paths unchanged", function()
+      assert.are.equal("/home/user", path.expand "/home/user")
+    end)
+
+    it("does not expand ~user (only bare ~)", function()
+      assert.are.equal("~user/foo", path.expand "~user/foo")
+    end)
+  end)
 end)

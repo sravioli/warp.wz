@@ -358,4 +358,108 @@ describe("warp.list", function()
       assert.are.same({}, result[1])
     end)
   end)
+
+  -- ── find ─────────────────────────────────────────────────────────────
+
+  describe("find", function()
+    it("returns first matching element and index", function()
+      local val, idx = list.find({ 1, 5, 10, 15 }, function(v)
+        return v > 7
+      end)
+      assert.are.equal(10, val)
+      assert.are.equal(3, idx)
+    end)
+
+    it("returns nil when no match", function()
+      local val, idx = list.find({ 1, 2, 3 }, function(v)
+        return v > 100
+      end)
+      assert.is_nil(val)
+      assert.is_nil(idx)
+    end)
+
+    it("returns nil for empty list", function()
+      local val, idx = list.find({}, function()
+        return true
+      end)
+      assert.is_nil(val)
+      assert.is_nil(idx)
+    end)
+
+    it("finds first occurrence only", function()
+      local val, idx = list.find({ "a", "b", "a" }, function(v)
+        return v == "a"
+      end)
+      assert.are.equal("a", val)
+      assert.are.equal(1, idx)
+    end)
+  end)
+
+  -- ── flatten ──────────────────────────────────────────────────────────
+
+  describe("flatten", function()
+    it("flattens one level", function()
+      assert.are.same({ 1, 2, 3, 4 }, list.flatten { { 1, 2 }, { 3, 4 } })
+    end)
+
+    it("flattens deeply nested", function()
+      assert.are.same({ 1, 2, 3 }, list.flatten { { { { 1 } } }, 2, { 3 } })
+    end)
+
+    it("respects depth limit", function()
+      assert.are.same({ { 1 }, 2, 3 }, list.flatten({ { { 1 } }, { 2 }, 3 }, 1))
+    end)
+
+    it("returns copy of flat list", function()
+      local input = { 1, 2, 3 }
+      local result = list.flatten(input)
+      assert.are.same(input, result)
+      assert.are_not.equal(input, result)
+    end)
+
+    it("handles empty list", function()
+      assert.are.same({}, list.flatten {})
+    end)
+
+    it("handles empty nested lists", function()
+      assert.are.same({ 1 }, list.flatten { {}, { 1 }, {} })
+    end)
+  end)
+
+  -- ── zip ──────────────────────────────────────────────────────────────
+
+  describe("zip", function()
+    it("zips two equal-length lists", function()
+      assert.are.same(
+        { { 1, "a" }, { 2, "b" }, { 3, "c" } },
+        list.zip({ 1, 2, 3 }, { "a", "b", "c" })
+      )
+    end)
+
+    it("stops at shortest list", function()
+      assert.are.same(
+        { { 1, "a" }, { 2, "b" } },
+        list.zip({ 1, 2, 3 }, { "a", "b" })
+      )
+    end)
+
+    it("zips three lists", function()
+      assert.are.same(
+        { { 1, "a", true }, { 2, "b", false } },
+        list.zip({ 1, 2 }, { "a", "b" }, { true, false })
+      )
+    end)
+
+    it("returns empty for no arguments", function()
+      assert.are.same({}, list.zip())
+    end)
+
+    it("returns empty when one list is empty", function()
+      assert.are.same({}, list.zip({ 1, 2 }, {}))
+    end)
+
+    it("handles single list", function()
+      assert.are.same({ { 1 }, { 2 } }, list.zip { 1, 2 })
+    end)
+  end)
 end)

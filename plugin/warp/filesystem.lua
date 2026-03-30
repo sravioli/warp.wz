@@ -169,6 +169,39 @@ M.get_cwd = function(pane, search_git_root_instead)
   return cwd
 end
 
+---Check whether a path is a directory.
+---
+---Uses `io.open` to probe the path. Not 100% reliable on all
+---platforms but avoids `lfs` or FFI dependencies — good enough for
+---WezTerm configuration code.
+---
+---@param path string Path to check.
+---@return boolean
+M.is_dir = function(path)
+  local handle = ioopen(path .. "/.", "r")
+  if handle then
+    ioclose(handle)
+    return true
+  end
+  return false
+end
+
+---Read the entire contents of a small file.
+---
+---Returns `nil` when the file cannot be opened.
+---
+---@param path string File path to read.
+---@return string|nil contents File contents, or `nil` on failure.
+M.read_file = function(path)
+  local handle = ioopen(path, "r")
+  if not handle then
+    return nil
+  end
+  local contents = handle:read "*a"
+  ioclose(handle)
+  return contents
+end
+
 ---@deprecated Use `get_cwd` and `get_hostname` separately.
 ---Kept for backwards compatibility; delegates to the two focused functions.
 ---

@@ -9,7 +9,8 @@ local col_width = str.col_width
 local str_split = str.split
 local wt_truncate_right = wt.truncate_right
 
-local str_find, str_sub, str_match, str_gsub = string.find, string.sub, string.match, string.gsub
+local str_byte, str_find, str_sub, str_match, str_gsub =
+  string.byte, string.find, string.sub, string.match, string.gsub
 local tbl_concat = table.concat
 local ceil, floor, max = math.ceil, math.floor, math.max
 
@@ -18,6 +19,125 @@ local M = {}
 
 M.is_win = str_find(wt.target_triple, "windows", 1, true) ~= nil
 M.separator = M.is_win and "\\" or "/"
+
+---Normalize a path.
+---
+---Collapses `.`, `..`, and repeated separators. Converts backslashes
+---to forward slashes. Preserves a leading `~` and trailing separator
+---only when the path is root (`/`).
+---
+---@param path string File or directory path.
+---@return string normalized Normalized path.
+M.normalize = function(path)
+  path = str_gsub(path, "\\", "/")
+  path = str_gsub(path, "/+", "/")
+
+  -- Preserve leading ~
+  local tilde = false
+  if str_sub(path, 1, 2) == "~/" or path == "~" then
+    tilde = true
+    path = str_sub(path, 2) -- strip ~, keep /...
+  end
+
+  local parts = str_split(path, "/")
+  local stack = {}
+  local n = 0
+  local is_abs = str_sub(path, 1, 1) == "/"
+
+  for i = 1, #parts do
+    local p = parts[i]
+    if p == ".." then
+      if n > 0 and stack[n] ~= ".." then
+        stack[n] = nil
+        n = n - 1
+      elseif not is_abs then
+        n = n + 1
+        stack[n] = p
+      end
+    elseif p ~= "." and p ~= "" then
+      n = n + 1
+      stack[n] = p
+    end
+  end
+
+  local result = tbl_concat(stack, "/")
+  if is_abs then
+    result = "/" .. result
+  end
+  if tilde then
+    -- Avoid "~/" for bare tilde
+    if result == "/" then
+      result = "~"
+    else
+      result = "~" .. result
+    end
+  end
+  if result == "" then
+    return "."
+  end
+  return result
+end
+
+---Return the parent directory of a path.
+---
+---@param path string File or directory path.
+---@return string dirname Parent directory, or `.` if none.
+M.dirname = function(path)
+  path = str_gsub(path, "\\", "/")
+  -- Root path (one or more slashes only)
+  if str_match(path, "^/+$") then
+    return "/"
+  end
+  path = str_gsub(path, "/+$", "")
+  if path == "" then
+    return "."
+  end
+  local parent = str_match(path, "^(.+)/[^/]*$")
+  if not parent then
+    -- No slash found — check for root
+    if str_sub(path, 1, 1) == "/" then
+      return "/"
+    end
+    return "."
+  end
+  -- Avoid returning empty string for paths like "/foo"
+  if parent == "" then
+    return "/"
+  end
+  return parent
+end
+
+---Return the file extension including the leading dot.
+---
+---Returns an empty string when no extension is found.
+---
+---@param path string File path.
+---@return string extension Extension (e.g. `.lua`), or `""`.
+M.extension = function(path)
+  local base = str_match(path, "([^/\\]*)$") or path
+  -- Dotfiles without further extension (e.g. ".gitignore") have no extension.
+  local ext = str_match(base, ".(%.[^.]+)$")
+  return ext or ""
+end
+
+---Check whether a path is absolute.
+---
+---@param path string File or directory path.
+---@return boolean
+M.is_absolute = function(path)
+  if str_sub(path, 1, 1) == "/" then
+    return true
+  end
+  -- Windows drive letter: C:\ or C:/
+  local b = str_byte(path, 1)
+  if b and ((b >= 65 and b <= 90) or (b >= 97 and b <= 122)) then
+    if str_sub(path, 2, 2) == ":" then
+      local third = str_sub(path, 3, 3)
+      return third == "/" or third == "\\"
+    end
+  end
+  return false
+end
 
 ---Abbreviate path by shortening intermediate components to specified length.
 ---
@@ -165,6 +285,25 @@ end
 ---@return string path Joined path string.
 M.concat = function(...)
   return tbl_concat({ ... }, M.separator)
+end
+
+---Expand `~` prefix to the user home directory.
+---
+---Requires the filesystem module to resolve the home path. Only
+---expands a leading `~` followed by `/`, `\`, or end-of-string.
+---
+---@param path string File or directory path.
+---@return string expanded Path with `~` replaced by the home directory.
+M.expand = function(path)
+  if str_sub(path, 1, 1) ~= "~" then
+    return path
+  end
+  local second = str_sub(path, 2, 2)
+  if second ~= "" and second ~= "/" and second ~= "\\" then
+    return path
+  end
+  local fs = require "warp.filesystem"
+  return fs.home .. str_sub(path, 2)
 end
 
 return M
