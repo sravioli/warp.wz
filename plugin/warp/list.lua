@@ -308,7 +308,7 @@ end
 ---a single table. Each entry is an independent table that can be
 ---safely stored or mutated.
 ---
----@param sets any[][]       List of sub-lists for the product.
+---@param sets any[][] List of sub-lists for the product.
 ---@return any[][] combinations All combinations.
 M.cartesian = function(sets)
   local out = {}
