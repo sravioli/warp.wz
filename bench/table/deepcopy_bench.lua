@@ -5,7 +5,8 @@ local deepcopy = tbl.deepcopy
 
 local ITERATIONS_ALLOC = 1e5
 
-local suite = chrono.suite("tbl.deepcopy", { iterations = ITERATIONS_ALLOC, warmup = 100 })
+local suite =
+  chrono.suite("tbl.deepcopy", { iterations = ITERATIONS_ALLOC, warmup = 100 })
 
 local small_list = { 1, 2, 3, 4, 5 }
 local medium_list = {}
