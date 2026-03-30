@@ -3,6 +3,8 @@
 ---@class Wezterm
 local wt = require "wezterm"--[[@as Wezterm]]
 
+local str = require "warp.string" ---@class Warp.String
+
 ---@class Warp.Path
 local M = {}
 
