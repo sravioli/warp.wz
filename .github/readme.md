@@ -32,39 +32,29 @@ local warp = wezterm.plugin.require("file:///" .. wezterm.config_dir .. "/plugin
 ## Usage
 
 ```lua
--- require individual modules
-local str = require "warp.string"
-local tbl = require "warp.table"
-local maths = require "warp.maths"
-local list = require "warp.list"
-local fs = require "warp.filesystem"
-local path = require "warp.path"
+local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
 
--- or use the aggregated API (list, maths, table only)
-local warp = require "warp"
 warp.list.reverse { 3, 2, 1 }              -- { 1, 2, 3 }
 warp.maths.clamp(15, 0, 10)                -- 10
 warp.table.deep_equal({ a = 1 }, { a = 1 }) -- true
+warp.string.truncate_middle("long-name", 8) -- "lon…ame"
+warp.path.shorten_to("~/projects/app", 12)  -- "~/p/app"
+warp.filesystem.platform().os               -- "windows"
 ```
 
 ## Modules
 
-The plugin provides six sub-modules. Three are also accessible via the
-public API:
+The plugin provides six sub-modules, all accessible via the public API:
 
 ```lua
-local warp = require "warp"
-warp.list   -- list (sequence) utilities
-warp.maths  -- math helpers
-warp.table  -- general table utilities
-```
+local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
 
-The remaining modules are loaded individually:
-
-```lua
-local str  = require "warp.string"     -- string utilities
-local fs   = require "warp.filesystem" -- OS / pane helpers
-local path = require "warp.path"       -- path manipulation
+warp.list       -- list (sequence) utilities
+warp.maths      -- math helpers
+warp.table      -- general table utilities
+warp.string     -- string utilities
+warp.filesystem -- OS / pane helpers
+warp.path       -- path manipulation
 ```
 
 ## String
@@ -163,11 +153,10 @@ pane URI parsing for WezTerm.
 
 ### Constants
 
-| Name            | Type    | Description                       |
-| --------------- | ------- | --------------------------------- |
-| `target_triple` | string  | Platform target triple.           |
-| `is_win`        | boolean | `true` on Windows.                |
-| `home`          | string  | User home directory (normalized). |
+| Name     | Type    | Description                       |
+| -------- | ------- | --------------------------------- |
+| `is_win` | boolean | `true` on Windows.                |
+| `home`   | string  | User home directory (normalized). |
 
 ### Functions
 
@@ -204,43 +193,38 @@ Path abbreviation and column-budget-aware truncation.
 Truncate a path to fit the tab bar:
 
 ```lua
-local path = require "warp.path"
-local short = path.shorten_to("~/projects/my-app/src/components", 25)
+local short = warp.path.shorten_to("~/projects/my-app/src/components", 25)
 -- "~/p/m/s/components"
 ```
 
 Binary search in a sorted list:
 
 ```lua
-local list = require "warp.list"
 local t = { 1, 3, 5, 7, 9 }
-local idx = list.bisect(t, 6) -- 4 (insert before 7)
+local idx = warp.list.bisect(t, 6) -- 4 (insert before 7)
 ```
 
 Deep merge configuration tables:
 
 ```lua
-local tbl = require "warp.table"
 local defaults = { ui = { theme = "dark", font_size = 14 } }
 local overrides = { ui = { font_size = 16 } }
-local config = tbl.deep_extend("force", defaults, overrides)
+local config = warp.table.deep_extend("force", defaults, overrides)
 -- { ui = { theme = "dark", font_size = 16 } }
 ```
 
 Column-aware string truncation:
 
 ```lua
-local str = require "warp.string"
-str.truncate_middle("plasma-csd-generator.rebupk", 18)
+warp.string.truncate_middle("plasma-csd-generator.rebupk", 18)
 -- "plasma-c…rebupk"
 ```
 
 Get CWD and hostname from a WezTerm pane:
 
 ```lua
-local fs = require "warp.filesystem"
-local cwd = fs.get_cwd(pane, false)  -- "~/projects/warp.wz"
-local host = fs.get_hostname(pane)    -- "Mybox"
+local cwd = warp.filesystem.get_cwd(pane, false)  -- "~/projects/warp.wz"
+local host = warp.filesystem.get_hostname(pane)    -- "Mybox"
 ```
 
 ## License
