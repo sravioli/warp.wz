@@ -9,9 +9,18 @@ local ogetenv = os.getenv
 
 local schar, sfind, sgsub, smatch, ssub =
   string.char, string.find, string.gsub, string.match, string.sub
+local supper = string.upper
+local tonumber = tonumber
 
 ---@class Warp.FileSystem
 local M = {}
+
+--- Decode a single percent-encoded hex pair.
+---@param hex string Two hex digits.
+---@return string char The decoded character.
+local function pct_decode(hex)
+  return schar(tonumber(hex, 16))
+end
 
 ---@package
 M.target_triple = wt_triple
@@ -113,7 +122,7 @@ M.get_hostname = function(pane)
     if hostname == "" then
       hostname = wt_hostname()
     end
-    hostname = sgsub(hostname, "^%l", string.upper)
+    hostname = sgsub(hostname, "^%l", supper)
   end
 
   return hostname
@@ -140,9 +149,7 @@ M.get_cwd = function(pane, search_git_root_instead)
       local slash = sfind(uri, "/")
       if slash then
         cwd = ssub(uri, slash)
-        cwd = sgsub(cwd, "%%(%x%x)", function(hex)
-          return schar(tonumber(hex, 16))
-        end)
+        cwd = sgsub(cwd, "%%(%x%x)", pct_decode)
       end
     end
   end
