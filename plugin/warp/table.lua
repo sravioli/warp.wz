@@ -2,6 +2,8 @@
 
 local floor = math.floor
 local sort = table.sort
+local type, next, pairs, select = type, next, pairs, select
+local setmetatable, getmetatable = setmetatable, getmetatable
 
 ---@class Warp.Table
 local M = {}
@@ -272,7 +274,7 @@ end
 ---@param a any First value.
 ---@param b any Second value.
 ---@return boolean `true` if the values are deeply equal.
-M.deep_equal = function(a, b)
+local function deep_equal(a, b)
   if a == b then
     return true
   end
@@ -281,7 +283,7 @@ M.deep_equal = function(a, b)
   end
   if type(a) == "table" then
     for k, v in pairs(a) do
-      if not M.deep_equal(v, b[k]) then
+      if not deep_equal(v, b[k]) then
         return false
       end
     end
@@ -294,6 +296,7 @@ M.deep_equal = function(a, b)
   end
   return false
 end
+M.deep_equal = deep_equal
 
 ---Index into a table via successive keys.
 ---
