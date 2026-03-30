@@ -189,4 +189,90 @@ describe("warp.maths", function()
       assert.are.equal(0, maths.clamp(-1, 0, math.huge))
     end)
   end)
+
+  -- ── Additional edge-case coverage ────────────────────────────────────
+
+  describe("round edge cases", function()
+    it("rounds -3.5 to -4 (nearest even)", function()
+      assert.are.equal(-4, maths.round(-3.5))
+    end)
+
+    it("rounds -4.5 to -4 (nearest even)", function()
+      assert.are.equal(-4, maths.round(-4.5))
+    end)
+
+    it("rounds 5.5 to 6 (nearest even)", function()
+      assert.are.equal(6, maths.round(5.5))
+    end)
+
+    it("rounds 6.5 to 6 (nearest even)", function()
+      assert.are.equal(6, maths.round(6.5))
+    end)
+
+    it("rounds just below 0.5", function()
+      assert.are.equal(0, maths.round(0.49999999))
+    end)
+
+    it("rounds just above 0.5", function()
+      assert.are.equal(1, maths.round(0.50000001))
+    end)
+
+    it("handles negative zero", function()
+      assert.are.equal(0, maths.round(-0.0))
+    end)
+
+    it("handles 99.5 (nearest even = 100)", function()
+      assert.are.equal(100, maths.round(99.5))
+    end)
+
+    it("handles 100.5 (nearest even = 100)", function()
+      assert.are.equal(100, maths.round(100.5))
+    end)
+  end)
+
+  describe("round_to edge cases", function()
+    it("rounds negative to nearest multiple of 3", function()
+      assert.are.equal(-9, maths.round_to(-10, 3))
+    end)
+
+    it("rounds to nearest multiple of 2 (even tie)", function()
+      -- 3 / 2 = 1.5 → rounds to 2 (even) → 2 * 2 = 4
+      assert.are.equal(4, maths.round_to(3, 2))
+    end)
+
+    it("handles very large multiple", function()
+      assert.are.equal(0, maths.round_to(499, 1000))
+    end)
+
+    it("handles multiple of 1 with negative", function()
+      assert.are.equal(-7, maths.round_to(-7, 1))
+    end)
+
+    it("handles negative multiple (Lua allows it)", function()
+      -- -12 / -5 = 2.4 → rounds to 2 → 2 * -5 = -10
+      assert.are.equal(-10, maths.round_to(-12, -5))
+    end)
+  end)
+
+  describe("clamp edge cases", function()
+    it("clamps NaN-adjacent: -math.huge clamped to 0", function()
+      assert.are.equal(0, maths.clamp(-math.huge, 0, 10))
+    end)
+
+    it("clamps math.huge to maximum", function()
+      assert.are.equal(10, maths.clamp(math.huge, 0, 10))
+    end)
+
+    it("handles very small range", function()
+      assert.are.equal(0.001, maths.clamp(0.0005, 0.001, 0.002))
+    end)
+
+    it("handles negative range clamping up", function()
+      assert.are.equal(-10, maths.clamp(-100, -10, -5))
+    end)
+
+    it("handles zero range at zero", function()
+      assert.are.equal(0, maths.clamp(42, 0, 0))
+    end)
+  end)
 end)

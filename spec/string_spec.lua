@@ -241,10 +241,7 @@ describe("warp.string", function()
 
     it("splits with plain=true treats sep as literal", function()
       -- "." is a pattern metachar; plain mode should treat it literally
-      assert.are.same(
-        { "a", "b", "c" },
-        collect(str.gsplit("a.b.c", ".", { plain = true }))
-      )
+      assert.are.same({ "a", "b", "c" }, collect(str.gsplit("a.b.c", ".", { plain = true })))
     end)
 
     it("splits with empty separator yields individual characters", function()
@@ -253,24 +250,15 @@ describe("warp.string", function()
 
     describe("trimempty option", function()
       it("trims leading empty segments", function()
-        assert.are.same(
-          { "a", "b" },
-          collect(str.gsplit(",a,b", ",", { trimempty = true }))
-        )
+        assert.are.same({ "a", "b" }, collect(str.gsplit(",a,b", ",", { trimempty = true })))
       end)
 
       it("trims trailing empty segments", function()
-        assert.are.same(
-          { "a", "b" },
-          collect(str.gsplit("a,b,", ",", { trimempty = true }))
-        )
+        assert.are.same({ "a", "b" }, collect(str.gsplit("a,b,", ",", { trimempty = true })))
       end)
 
       it("trims both leading and trailing empty segments", function()
-        assert.are.same(
-          { "a", "b" },
-          collect(str.gsplit(",a,b,", ",", { trimempty = true }))
-        )
+        assert.are.same({ "a", "b" }, collect(str.gsplit(",a,b,", ",", { trimempty = true })))
       end)
 
       it("handles all-empty segments", function()
@@ -278,10 +266,7 @@ describe("warp.string", function()
       end)
 
       it("collapses inner empty segments", function()
-        assert.are.same(
-          { "a", "b" },
-          collect(str.gsplit(",a,,b,", ",", { trimempty = true }))
-        )
+        assert.are.same({ "a", "b" }, collect(str.gsplit(",a,,b,", ",", { trimempty = true })))
       end)
     end)
   end)
@@ -433,38 +418,219 @@ describe("warp.string", function()
 
   describe("truncate", function()
     it("dispatches mode='left'", function()
-      assert.are.equal(
-        str.truncate_left("abcdefgh", 5),
-        str.truncate("abcdefgh", 5, "left")
-      )
+      assert.are.equal(str.truncate_left("abcdefgh", 5), str.truncate("left", "abcdefgh", 5))
     end)
 
     it("dispatches mode='middle'", function()
-      assert.are.equal(
-        str.truncate_middle("abcdefgh", 5),
-        str.truncate("abcdefgh", 5, "middle")
-      )
+      assert.are.equal(str.truncate_middle("abcdefgh", 5), str.truncate("middle", "abcdefgh", 5))
     end)
 
     it("dispatches mode='right'", function()
-      assert.are.equal(
-        str.truncate_right("abcdefgh", 5),
-        str.truncate("abcdefgh", 5, "right")
-      )
+      assert.are.equal(str.truncate_right("abcdefgh", 5), str.truncate("right", "abcdefgh", 5))
     end)
 
     it("defaults to right truncation for unknown mode", function()
-      assert.are.equal(
-        str.truncate_right("abcdefgh", 5),
-        str.truncate("abcdefgh", 5, "whatever")
-      )
+      assert.are.equal(str.truncate_right("abcdefgh", 5), str.truncate("whatever", "abcdefgh", 5))
     end)
 
     it("defaults to right truncation for nil mode", function()
-      assert.are.equal(
-        str.truncate_right("abcdefgh", 5),
-        str.truncate("abcdefgh", 5, nil)
-      )
+      assert.are.equal(str.truncate_right("abcdefgh", 5), str.truncate(nil, "abcdefgh", 5))
+    end)
+  end)
+
+  -- ── Additional edge-case coverage ────────────────────────────────────
+
+  describe("col_width", function()
+    it("is exposed as a function", function()
+      assert.is_function(str.col_width)
+    end)
+
+    it("returns 0 for empty string", function()
+      assert.are.equal(0, str.col_width "")
+    end)
+
+    it("counts ASCII codepoints", function()
+      assert.are.equal(3, str.col_width "abc")
+    end)
+  end)
+
+  describe("strip_ansi edge cases", function()
+    it("handles string with only escape sequences", function()
+      assert.are.equal("", str.strip_ansi "\27[31m\27[0m")
+    end)
+
+    it("handles interleaved text and escapes", function()
+      assert.are.equal("abc", str.strip_ansi "a\27[1mb\27[2mc\27[0m")
+    end)
+  end)
+
+  describe("width edge cases", function()
+    it("handles multi-byte UTF-8 without ANSI", function()
+      -- "αβγ" = 3 codepoints, no ESC byte → fast path
+      assert.are.equal(3, str.width "αβγ")
+    end)
+
+    it("handles string with only ANSI codes", function()
+      assert.are.equal(0, str.width "\27[31m\27[0m")
+    end)
+  end)
+
+  describe("pad edge cases", function()
+    it("handles boolean input", function()
+      assert.are.equal(" true ", str.pad(true))
+    end)
+
+    it("handles nil left with numeric right", function()
+      assert.are.equal("hi--", str.pad("hi", { left = nil, right = 2 }, "-"))
+    end)
+
+    it("ignores invalid padding type (returns default)", function()
+      assert.are.equal(" hi ", str.pad("hi", "invalid"))
+    end)
+
+    it("handles large numeric padding", function()
+      local result = str.pad("x", 100)
+      -- 100 spaces each side + 1 char = 201
+      assert.are.equal(201, #result)
+    end)
+  end)
+
+  describe("gsplit edge cases", function()
+    it("handles empty string with empty separator", function()
+      assert.are.same({}, collect(str.gsplit("", "")))
+    end)
+
+    it("splits single character by empty separator", function()
+      assert.are.same({ "a" }, collect(str.gsplit("a", "")))
+    end)
+
+    it("handles multi-char separator at edges", function()
+      assert.are.same({ "", "a", "" }, collect(str.gsplit("::a::", "::")))
+    end)
+
+    it("handles only separator", function()
+      assert.are.same({ "", "" }, collect(str.gsplit(",", ",")))
+    end)
+
+    it("trimempty with multi-char separator", function()
+      assert.are.same({ "a" }, collect(str.gsplit("::a::", "::", { trimempty = true })))
+    end)
+
+    it("trimempty with only separators (multi-char)", function()
+      assert.are.same({}, collect(str.gsplit("::::", "::", { trimempty = true })))
+    end)
+
+    it("plain + trimempty combined", function()
+      assert.are.same({ "b" }, collect(str.gsplit(".b.", ".", { plain = true, trimempty = true })))
+    end)
+
+    it("trimempty preserves single non-empty segment", function()
+      assert.are.same({ "x" }, collect(str.gsplit(",,,x,,,", ",", { trimempty = true })))
+    end)
+
+    it("pattern separator with capture group-like chars", function()
+      assert.are.same({ "a", "b", "c" }, collect(str.gsplit("a1b2c", "[0-9]")))
+    end)
+  end)
+
+  describe("split edge cases", function()
+    it("handles very long string", function()
+      local s = string.rep("a,", 100) .. "a"
+      local parts = str.split(s, ",")
+      assert.are.equal(101, #parts)
+    end)
+
+    it("handles separator longer than input", function()
+      assert.are.same({ "ab" }, str.split("ab", "::::"))
+    end)
+
+    it("handles whitespace-only input with space separator", function()
+      assert.are.same({ "", "", "", "" }, str.split("   ", " "))
+    end)
+  end)
+
+  describe("fits edge cases", function()
+    it("returns true for empty string with 0 budget", function()
+      assert.is_true(str.fits("", 0))
+    end)
+
+    it("returns false for single char with 0 budget", function()
+      assert.is_false(str.fits("a", 0))
+    end)
+
+    it("returns true for string exactly at budget", function()
+      assert.is_true(str.fits("abc", 3))
+    end)
+
+    it("returns false for string one over budget", function()
+      assert.is_false(str.fits("abcd", 3))
+    end)
+  end)
+
+  describe("truncate_right edge cases", function()
+    it("handles single-char string exceeding budget", function()
+      -- "a" has width 1, budget 0 → budget <= ellipsis_w → "…"
+      assert.are.equal("…", str.truncate_right("a", 0))
+    end)
+
+    it("handles two-char string with budget 2 (fits exactly)", function()
+      assert.are.equal("ab", str.truncate_right("ab", 2))
+    end)
+
+    it("handles empty string", function()
+      assert.are.equal("", str.truncate_right("", 5))
+    end)
+  end)
+
+  describe("truncate_left edge cases", function()
+    it("handles single-char string within budget", function()
+      assert.are.equal("x", str.truncate_left("x", 5))
+    end)
+
+    it("handles budget of 0", function()
+      assert.are.equal("…", str.truncate_left("abcdef", 0))
+    end)
+
+    it("handles empty string", function()
+      assert.are.equal("", str.truncate_left("", 5))
+    end)
+  end)
+
+  describe("truncate_middle edge cases", function()
+    it("handles budget of 0", function()
+      assert.are.equal("…", str.truncate_middle("abcdefgh", 0))
+    end)
+
+    it("handles empty string", function()
+      assert.are.equal("", str.truncate_middle("", 5))
+    end)
+
+    it("handles single char within budget", function()
+      assert.are.equal("x", str.truncate_middle("x", 5))
+    end)
+
+    it("handles string of length 2 with budget 2", function()
+      assert.are.equal("ab", str.truncate_middle("ab", 2))
+    end)
+
+    it("handles budget of 4 on long string", function()
+      local result = str.truncate_middle("abcdefgh", 4)
+      -- remaining = 3, left = ceil(1.5) = 2, right = floor(1.5) = 1
+      assert.are.equal("ab…h", result)
+    end)
+  end)
+
+  describe("trim edge cases", function()
+    it("handles string with only tabs", function()
+      assert.are.equal("", str.trim "\t\t\t")
+    end)
+
+    it("handles string with mixed whitespace types", function()
+      assert.are.equal("x", str.trim "\r\n\t x \t\n\r")
+    end)
+
+    it("preserves non-breaking content", function()
+      assert.are.equal("a\tb", str.trim "  a\tb  ")
     end)
   end)
 end)

@@ -180,4 +180,77 @@ describe("warp.path", function()
       assert.are.equal("/home/", path.concat("", "home", ""))
     end)
   end)
+
+  -- ── Additional edge-case coverage ────────────────────────────────────
+
+  describe("shorten edge cases", function()
+    it("handles deeply nested path", function()
+      local result = path.shorten("a/b/c/d/e/f/file.txt", 1)
+      assert.are.equal("a/b/c/d/e/f/file.txt", result)
+    end)
+
+    it("handles len = 3 on long components", function()
+      local result = path.shorten("documents/projects/myfile.txt", 3)
+      assert.are.equal("doc/pro/myfile.txt", result)
+    end)
+
+    it("returns single component unchanged regardless of len", function()
+      assert.are.equal("hello", path.shorten("hello", 1))
+    end)
+
+    it("handles rooted path with single dir", function()
+      assert.are.equal("/d/file.txt", path.shorten("/dir/file.txt", 1))
+    end)
+
+    it("handles empty path", function()
+      assert.are.equal("", path.shorten("", 1))
+    end)
+
+    it("preserves large len across all components", function()
+      local result = path.shorten("ab/cd/ef/file.txt", 100)
+      assert.are.equal("ab/cd/ef/file.txt", result)
+    end)
+  end)
+
+  describe("shorten_to edge cases", function()
+    it("handles single component exactly at budget", function()
+      assert.are.equal("hello", path.shorten_to("hello", 5))
+    end)
+
+    it("handles rooted path that barely fits", function()
+      -- shorten_to strips trailing slashes then matches last component
+      -- "/file.txt" → last = "file.txt", prefix = "/"
+      -- But the leading "/" is a separator, sep_count=1 from the "/"
+      -- With budget 20 the path fits as-is after stripping
+      assert.are.equal("file.txt", path.shorten_to("/file.txt", 20))
+    end)
+
+    it("handles deeply nested path with tight budget", function()
+      local result = path.shorten_to("a/b/c/d/file.txt", 16)
+      -- sep_count=4, sep_w=4, last_w=8, dirs=4, dir_budget=16-4-8=4, per=1
+      assert.are.equal("a/b/c/d/file.txt", result)
+    end)
+
+    it("handles path with no directories (just filename)", function()
+      assert.are.equal("file.txt", path.shorten_to("file.txt", 20))
+    end)
+
+    it("handles empty path", function()
+      assert.are.equal("", path.shorten_to("", 10))
+    end)
+
+    it("handles budget exactly matching path width", function()
+      assert.are.equal("src/file.txt", path.shorten_to("src/file.txt", 12))
+    end)
+  end)
+
+  describe("concat edge cases", function()
+    it("joins many components", function()
+      assert.are.equal("a/b/c/d/e", path.concat("a", "b", "c", "d", "e"))
+    end)
+
+    it("handles two empty strings", function()
+      assert.are.equal("/", path.concat("", ""))
+    end)
+  end)
 end)

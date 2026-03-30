@@ -397,8 +397,7 @@ describe("warp.list", function()
     end)
 
     it("produces all combinations of three lists", function()
-      local results =
-        collect_iter(list.cartesian_iter { { 1, 2 }, { "a" }, { true, false } })
+      local results = collect_iter(list.cartesian_iter { { 1, 2 }, { "a" }, { true, false } })
       assert.are.equal(4, #results)
       assert.are.same({ 1, "a", true }, results[1][2])
       assert.are.same({ 1, "a", false }, results[2][2])
@@ -514,6 +513,180 @@ describe("warp.list", function()
     it("handles large product", function()
       local result = list.cartesian { { 1, 2, 3, 4 }, { 1, 2, 3, 4 }, { 1, 2 } }
       assert.are.equal(4 * 4 * 2, #result)
+    end)
+  end)
+
+  -- ── Additional edge-case coverage ────────────────────────────────────
+
+  describe("contains edge cases", function()
+    it("finds value at the very end of a large list", function()
+      local t = {}
+      for i = 1, 100 do
+        t[i] = i
+      end
+      assert.is_true(list.contains(t, 100))
+    end)
+
+    it("returns false for empty string value in non-empty list", function()
+      assert.is_false(list.contains({ "a", "b", "c" }, ""))
+    end)
+
+    it("finds empty string when present", function()
+      assert.is_true(list.contains({ "", "a" }, ""))
+    end)
+
+    it("does not scan hash portion", function()
+      local t = { 1, 2, 3 }
+      t.key = 42
+      assert.is_false(list.contains(t, 42))
+    end)
+  end)
+
+  describe("extend edge cases", function()
+    it("handles start beyond src length (no-op)", function()
+      local dst = { 1 }
+      list.extend(dst, { 10, 20, 30 }, 5)
+      assert.are.same({ 1 }, dst)
+    end)
+
+    it("handles finish of 0 (no-op)", function()
+      local dst = { 1 }
+      list.extend(dst, { 10, 20, 30 }, 1, 0)
+      assert.are.same({ 1 }, dst)
+    end)
+
+    it("extends into non-empty dst with offset range", function()
+      local dst = { 100, 200 }
+      list.extend(dst, { 10, 20, 30, 40 }, 2, 3)
+      assert.are.same({ 100, 200, 20, 30 }, dst)
+    end)
+  end)
+
+  describe("slice edge cases", function()
+    it("handles start = 0 (extends before list start)", function()
+      -- Lua for-loop from 0 will include index 0 which is nil
+      local s = list.slice({ 10, 20, 30 }, 0)
+      -- index 0 has nil, so only 1,2,3 are stored with gaps
+      assert.are.equal(nil, s[1])
+    end)
+
+    it("handles finish beyond list length", function()
+      local s = list.slice({ 10, 20 }, 1, 5)
+      -- indices 3,4,5 are nil, only 10 and 20 are added
+      assert.are.equal(10, s[1])
+      assert.are.equal(20, s[2])
+    end)
+
+    it("returns new table even for single-element slice", function()
+      local orig = { 42 }
+      local s = list.slice(orig, 1, 1)
+      assert.are.same({ 42 }, s)
+      assert.are_not.equal(orig, s)
+    end)
+  end)
+
+  describe("unique edge cases", function()
+    it("handles boolean values", function()
+      local t = { true, false, true, false }
+      list.unique(t)
+      assert.are.same({ true, false }, t)
+    end)
+
+    it("handles mixed types", function()
+      local t = { 1, "1", 1, "1" }
+      list.unique(t)
+      assert.are.same({ 1, "1" }, t)
+    end)
+
+    it("key function returning same value collapses all", function()
+      local t = { "a", "b", "c" }
+      list.unique(t, function()
+        return "same"
+      end)
+      assert.are.same({ "a" }, t)
+    end)
+  end)
+
+  describe("bisect edge cases", function()
+    it("lower bound: all elements equal to val", function()
+      assert.are.equal(1, list.bisect({ 5, 5, 5, 5 }, 5))
+    end)
+
+    it("upper bound: all elements equal to val", function()
+      assert.are.equal(5, list.bisect({ 5, 5, 5, 5 }, 5, { bound = "upper" }))
+    end)
+
+    it("lower bound: val smaller than all", function()
+      assert.are.equal(1, list.bisect({ 10, 20, 30 }, 1))
+    end)
+
+    it("upper bound: val larger than all", function()
+      assert.are.equal(4, list.bisect({ 10, 20, 30 }, 40, { bound = "upper" }))
+    end)
+
+    it("lower bound with lo and hi narrowing range", function()
+      assert.are.equal(3, list.bisect({ 1, 2, 3, 4, 5 }, 3, { lo = 2, hi = 5 }))
+    end)
+
+    it("upper bound with lo and hi narrowing range", function()
+      assert.are.equal(4, list.bisect({ 1, 2, 3, 4, 5 }, 3, { lo = 2, hi = 5, bound = "upper" }))
+    end)
+
+    it("key function with upper bound", function()
+      local t = { { v = 1 }, { v = 2 }, { v = 2 }, { v = 3 } }
+      local key = function(x)
+        return x.v
+      end
+      assert.are.equal(4, list.bisect(t, { v = 2 }, { key = key, bound = "upper" }))
+    end)
+
+    it("handles large sorted list", function()
+      local t = {}
+      for i = 1, 1000 do
+        t[i] = i * 2
+      end
+      assert.are.equal(500, list.bisect(t, 1000)) -- 1000 = t[500]
+    end)
+  end)
+
+  describe("reverse edge cases", function()
+    it("reverses list with mixed types", function()
+      local t = { 1, "two", true }
+      list.reverse(t)
+      assert.are.same({ true, "two", 1 }, t)
+    end)
+
+    it("does not affect hash keys", function()
+      local t = { 1, 2, 3, key = "value" }
+      list.reverse(t)
+      assert.are.same({ 3, 2, 1 }, { t[1], t[2], t[3] })
+      assert.are.equal("value", t.key)
+    end)
+  end)
+
+  describe("cartesian edge cases", function()
+    it("handles empty outer list (produces one empty combo)", function()
+      local result = list.cartesian {}
+      -- With zero sets, combination_count is 1 (product of nothing)
+      assert.are.equal(1, #result)
+      assert.are.same({}, result[1])
+    end)
+
+    it("cartesian_iter yields one empty combo for empty sets", function()
+      local count = 0
+      for _ in list.cartesian_iter {} do
+        count = count + 1
+      end
+      -- Product of zero dimensions is 1 (empty tuple)
+      assert.are.equal(1, count)
+    end)
+
+    it("cartesian_iter_copy with single element sets", function()
+      local results = {}
+      for _, combo in list.cartesian_iter_copy { { "a" }, { "b" }, { "c" } } do
+        results[#results + 1] = combo
+      end
+      assert.are.same({ { "a", "b", "c" } }, results)
     end)
   end)
 end)

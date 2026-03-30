@@ -338,11 +338,11 @@ end
 ---Truncate `s` to fit within `budget` columns using the
 ---specified strategy.
 ---
+---@param  mode   TruncateMode
 ---@param  s      string
 ---@param  budget integer
----@param  mode   TruncateMode
 ---@return string
-M.truncate = function(s, budget, mode)
+M.truncate = function(mode, s, budget)
   if mode == "left" then
     return M.truncate_left(s, budget)
   end

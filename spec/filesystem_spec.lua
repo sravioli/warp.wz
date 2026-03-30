@@ -394,4 +394,194 @@ describe("warp.filesystem", function()
       assert.are.equal("Mybox", hostname)
     end)
   end)
+
+  -- ── Additional edge-case coverage ────────────────────────────────────
+
+  describe("platform edge cases", function()
+    it("detects FreeBSD-like triple as unknown", function()
+      local fs = load_fs { triple = "x86_64-unknown-freebsd14.0" }
+      local p = fs.platform()
+      assert.are.equal("unknown", p.os)
+    end)
+
+    it("detects ARM Linux", function()
+      local fs = load_fs { triple = "aarch64-unknown-linux-musl" }
+      local p = fs.platform()
+      assert.are.equal("linux", p.os)
+      assert.is_true(p.is_linux)
+    end)
+
+    it("detects Windows ARM", function()
+      local fs = load_fs { triple = "aarch64-pc-windows-msvc" }
+      local p = fs.platform()
+      assert.are.equal("windows", p.os)
+      assert.is_true(p.is_win)
+    end)
+  end)
+
+  describe("home edge cases", function()
+    it("normalizes backslashes in USERPROFILE", function()
+      local fs = load_fs {
+        triple = "x86_64-pc-windows-msvc",
+        env = { USERPROFILE = "C:\\Users\\Back\\Slash" },
+      }
+      assert.are.equal("C:/Users/Back/Slash", fs.home)
+    end)
+
+    it("prefers USERPROFILE over HOME", function()
+      local fs = load_fs {
+        triple = "x86_64-pc-windows-msvc",
+        env = { USERPROFILE = "C:\\Users\\Win", HOME = "/home/unix" },
+      }
+      assert.are.equal("C:/Users/Win", fs.home)
+    end)
+  end)
+
+  describe("basename edge cases", function()
+    it("handles empty string", function()
+      local fs = load_fs { triple = "x86_64-unknown-linux-gnu" }
+      assert.are.equal("", fs.basename "")
+    end)
+
+    it("handles single character", function()
+      local fs = load_fs { triple = "x86_64-unknown-linux-gnu" }
+      assert.are.equal("a", fs.basename "a")
+    end)
+
+    it("handles double slash", function()
+      local fs = load_fs { triple = "x86_64-unknown-linux-gnu" }
+      assert.are.equal("file", fs.basename "//server/share/file")
+    end)
+
+    it("handles filename with multiple dots", function()
+      local fs = load_fs { triple = "x86_64-unknown-linux-gnu" }
+      assert.are.equal("file.tar.gz", fs.basename "/path/to/file.tar.gz")
+    end)
+
+    it("handles path with only slashes", function()
+      local fs = load_fs { triple = "x86_64-unknown-linux-gnu" }
+      assert.are.equal("", fs.basename "///")
+    end)
+  end)
+
+  describe("find_git_dir edge cases", function()
+    it("handles deeply nested directory", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+        io_open = function(path)
+          if path == "/home/user/a/.git/HEAD" then
+            return {}
+          end
+          return nil
+        end,
+        io_close = function() end,
+      }
+      local root = fs.find_git_dir "/home/user/a/b/c/d/e"
+      assert.are.equal("~/a", root)
+    end)
+
+    it("handles empty string directory", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+        io_open = function()
+          return nil
+        end,
+      }
+      local root = fs.find_git_dir ""
+      assert.is_nil(root)
+    end)
+  end)
+
+  describe("get_hostname edge cases", function()
+    it("handles hostname with hyphens", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        hostname = "my-host",
+      }
+      local pane = mock_pane "file://my-host.domain.com/home"
+      assert.are.equal("My-host", fs.get_hostname(pane))
+    end)
+
+    it("handles already-capitalized hostname", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        hostname = "HOST",
+      }
+      local pane = mock_pane(userdata_uri("/home", "HOST"))
+      -- "HOST" starts with uppercase, pattern ^%l won't match → stays "HOST"
+      assert.are.equal("HOST", fs.get_hostname(pane))
+    end)
+
+    it("handles numeric hostname", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        hostname = "192.168.1.1",
+      }
+      local pane = mock_pane(userdata_uri("/home", "192.168.1.1"))
+      -- Strips domain → "192"
+      -- "192" starts with a digit, not lowercase → stays "192"
+      assert.are.equal("192", fs.get_hostname(pane))
+    end)
+
+    it("handles string URI with no slash at all", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        hostname = "fallback",
+      }
+      -- After stripping "file://", we get "noslash" → no slash found
+      local pane = mock_pane "file://noslash"
+      -- hostname stays "" → falls back to wezterm hostname
+      assert.are.equal("Fallback", fs.get_hostname(pane))
+    end)
+  end)
+
+  describe("get_cwd edge cases", function()
+    it("handles percent-encoded special characters", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+      }
+      local pane = mock_pane "file://host/home/user/dir%23with%25hash"
+      assert.are.equal("~/dir#with%hash", fs.get_cwd(pane, false))
+    end)
+
+    it("handles Windows cwd from userdata", function()
+      local fs = load_fs {
+        triple = "x86_64-pc-windows-msvc",
+        env = { USERPROFILE = "C:\\Users\\Test" },
+      }
+      local pane = mock_pane(userdata_uri "/C:/Users/Test/Documents")
+      assert.are.equal("~/Documents", fs.get_cwd(pane, false))
+    end)
+
+    it("handles cwd that exactly matches home", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+      }
+      local pane = mock_pane(userdata_uri "/home/user")
+      assert.are.equal("~", fs.get_cwd(pane, false))
+    end)
+
+    it("replaces home even in middle of path (gsub behavior)", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+      }
+      -- gsub matches home anywhere with (.-)$ so this replaces too
+      local pane = mock_pane(userdata_uri "/var/home/user/data")
+      assert.are.equal("/var~/data", fs.get_cwd(pane, false))
+    end)
+
+    it("handles string URI with empty path after host", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+      }
+      local pane = mock_pane "file://host/"
+      assert.are.equal("/", fs.get_cwd(pane, false))
+    end)
+  end)
 end)
