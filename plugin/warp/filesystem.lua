@@ -6,7 +6,6 @@ local wt_home, wt_hostname, wt_triple = wt.home, wt.hostname, wt.target_triple
 
 local ioclose, ioopen = io.close, io.open
 local ogetenv = os.getenv
-local tconcat = table.concat
 
 local schar, sfind, sgsub, smatch, ssub =
   string.char, string.find, string.gsub, string.match, string.sub
@@ -15,23 +14,22 @@ local schar, sfind, sgsub, smatch, ssub =
 local M = {}
 
 ---@package
----
----Class logger
-M.log = require("utils.logger").new "Fn.FileSystem"
-
----@package
 M.target_triple = wt_triple
+
+---@alias OsType "windows"|"linux"|"mac"|"unknown"
+
+---@class Warp.FileSystem.Platform
+---@field public os       OsType  Operating system name.
+---@field public is_win   boolean Whether the platform is Windows.
+---@field public is_linux boolean Whether the platform is Linux.
+---@field public is_mac   boolean Whether the platform is macOS.
 
 ---Get platform information.
 ---
----Identifies OS based on target triple. Memoized for performance.
+---Identifies OS based on target triple.
 ---
----@return Fn.FileSystem.Platform platform Platform details (OS name, boolean flags).
-local _platform
+---@return Warp.FileSystem.Platform platform Platform details (OS name, boolean flags).
 M.platform = function()
-  if _platform then
-    return _platform
-  end
   local is_win = sfind(M.target_triple, "windows", 1, true) ~= nil
   local is_linux = sfind(M.target_triple, "linux", 1, true) ~= nil
   local is_mac = sfind(M.target_triple, "apple", 1, true) ~= nil
@@ -39,8 +37,7 @@ M.platform = function()
     or is_linux and "linux"
     or is_mac and "mac"
     or "unknown"
-  _platform = { os = os_name, is_win = is_win, is_linux = is_linux, is_mac = is_mac }
-  return _platform
+  return { os = os_name, is_win = is_win, is_linux = is_linux, is_mac = is_mac }
 end
 
 M.is_win = M.platform().is_win
@@ -54,21 +51,13 @@ M.home = (sgsub((ogetenv "USERPROFILE" or ogetenv "HOME" or wt_home or ""), "\\"
 ---Extract base name from path.
 ---
 ---Equivalent to POSIX `basename(3)`. Returns the final component of the path.
----Uses a simple direct-lookup cache to avoid generic cache machinery overhead.
 ---
 ---@param path string File path.
 ---@return string basename Final component of the path.
-local _basename_cache = {}
 M.basename = function(path)
-  local cached = _basename_cache[path]
-  if cached then
-    return cached
-  end
   local trimmed_path = sgsub(path, "[/\\]*$", "")
   local index = sfind(trimmed_path, "[^/\\]*$")
-  local result = index and ssub(trimmed_path, index) or trimmed_path
-  _basename_cache[path] = result
-  return result
+  return index and ssub(trimmed_path, index) or trimmed_path
 end
 
 ---Find git project root.
@@ -77,20 +66,13 @@ end
 ---
 ---@param directory string Starting directory path.
 ---@return string|nil git_root Root directory of the git repo, or nil if not found.
-local _git_dir_cache = {}
 M.find_git_dir = function(directory)
-  local cached = _git_dir_cache[directory]
-  if cached ~= nil then
-    return cached or nil
-  end
   local dir = sgsub(directory, "~", M.home)
   while dir do
     local handle = ioopen(dir .. "/.git/HEAD", "r")
     if handle then
       ioclose(handle)
-      local result = (dir:gsub(M.home, "~"))
-      _git_dir_cache[directory] = result
-      return result
+      return (dir:gsub(M.home, "~"))
     elseif dir == "/" or dir == "" then
       break
     else
@@ -98,7 +80,6 @@ M.find_git_dir = function(directory)
     end
   end
 
-  _git_dir_cache[directory] = false
   return nil
 end
 

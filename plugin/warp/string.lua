@@ -189,7 +189,7 @@ end
 
 ---Split string into list of substrings.
 ---
----Uses `gsplit` internally and caches the result.
+---Uses `gsplit` internally.
 ---
 ---@param s     string          Input string to split.
 ---@param sep   string          Separator pattern.
