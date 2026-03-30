@@ -223,7 +223,7 @@ describe("warp.filesystem", function()
         triple = "x86_64-unknown-linux-gnu",
         env = { HOME = "/home/user" },
         io_open = function(path)
-          if path:find("%.git/HEAD$") then
+          if path:find "%.git/HEAD$" then
             git_paths[#git_paths + 1] = path
           end
           if path == "/home/user/repo/.git/HEAD" then
@@ -258,7 +258,7 @@ describe("warp.filesystem", function()
         triple = "x86_64-unknown-linux-gnu",
         env = { HOME = "/home/user" },
         io_open = function(path)
-          if path:find("%.git/HEAD$") then
+          if path:find "%.git/HEAD$" then
             count = count + 1
           end
           return nil
