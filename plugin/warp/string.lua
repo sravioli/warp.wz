@@ -335,6 +335,13 @@ end
 
 ---@alias TruncateMode "left"|"middle"|"right"
 
+---@type table<TruncateMode, fun(s: string, budget: integer): string>
+local truncators = {
+  left = M.truncate_left,
+  middle = M.truncate_middle,
+  right = M.truncate_right,
+}
+
 ---Truncate `s` to fit within `budget` columns using the
 ---specified strategy.
 ---
@@ -343,13 +350,11 @@ end
 ---@param  budget integer
 ---@return string
 M.truncate = function(mode, s, budget)
-  if mode == "left" then
-    return M.truncate_left(s, budget)
+  local fn = truncators[mode]
+  if not fn then
+    error("invalid truncate mode: " .. tostring(mode), 2)
   end
-  if mode == "middle" then
-    return M.truncate_middle(s, budget)
-  end
-  return M.truncate_right(s, budget)
+  return fn(s, budget)
 end
 
 return M

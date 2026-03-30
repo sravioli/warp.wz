@@ -75,29 +75,29 @@ column widths via WezTerm's `column_width()`.
 
 ### Constants
 
-| Name        | Type     | Description                                   |
-| ----------- | -------- | --------------------------------------------- |
-| `empty`     | string   | Empty string (`""`).                          |
-| `space`     | string   | Single space (`" "`).                         |
-| `col_width` | function | WezTerm's `column_width()` function.          |
+| Name        | Type     | Description                          |
+| ----------- | -------- | ------------------------------------ |
+| `empty`     | string   | Empty string (`""`).                 |
+| `space`     | string   | Single space (`" "`).                |
+| `col_width` | function | WezTerm's `column_width()` function. |
 
 ### Functions
 
-| Function                      | Description                                       |
-| ----------------------------- | ------------------------------------------------- |
-| `strip_ansi(s)`               | Strip ANSI/VT escape sequences.                   |
-| `width(s)`                    | Visible column width (ANSI-safe).                 |
-| `pad(s, padding?, ch?)`       | Pad both sides.                                   |
-| `padl(s, padding?, ch?)`      | Pad left side.                                    |
-| `padr(s, padding?, ch?)`      | Pad right side.                                   |
-| `trim(s)`                     | Remove leading/trailing whitespace.               |
-| `gsplit(s, sep, opts?)`       | Iterator over substrings split by pattern.        |
-| `split(s, sep, opts?)`        | Split string into a list.                         |
-| `fits(s, budget)`             | Check whether string fits within column budget.   |
-| `truncate_right(s, budget)`   | Truncate from right with ellipsis.                |
-| `truncate_left(s, budget)`    | Truncate from left with ellipsis.                 |
-| `truncate_middle(s, budget)`  | Truncate from middle with ellipsis.               |
-| `truncate(mode, s, budget)`   | Truncate using strategy: `left`/`middle`/`right`. |
+| Function                     | Description                                       |
+| ---------------------------- | ------------------------------------------------- |
+| `strip_ansi(s)`              | Strip ANSI/VT escape sequences.                   |
+| `width(s)`                   | Visible column width (ANSI-safe).                 |
+| `pad(s, padding?, ch?)`      | Pad both sides.                                   |
+| `padl(s, padding?, ch?)`     | Pad left side.                                    |
+| `padr(s, padding?, ch?)`     | Pad right side.                                   |
+| `trim(s)`                    | Remove leading/trailing whitespace.               |
+| `gsplit(s, sep, opts?)`      | Iterator over substrings split by pattern.        |
+| `split(s, sep, opts?)`       | Split string into a list.                         |
+| `fits(s, budget)`            | Check whether string fits within column budget.   |
+| `truncate_right(s, budget)`  | Truncate from right with ellipsis.                |
+| `truncate_left(s, budget)`   | Truncate from left with ellipsis.                 |
+| `truncate_middle(s, budget)` | Truncate from middle with ellipsis.               |
+| `truncate(mode, s, budget)`  | Truncate using strategy: `left`/`middle`/`right`. |
 
 ## Table
 
@@ -106,25 +106,25 @@ merging, and sorted iteration.
 
 ### Functions
 
-| Function                       | Description                                 |
-| ------------------------------ | ------------------------------------------- |
-| `isempty(tbl)`                 | `true` when list portion is empty.          |
-| `isblank(tbl)`                 | `true` when table has no entries at all.    |
-| `islist(tbl)`                  | `true` for contiguous 1-based sequences.    |
-| `isarray(tbl)`                 | `true` when all keys are integers.          |
-| `copy(obj)`                    | Shallow copy.                               |
-| `deepcopy(obj, noref?)`        | Deep copy (handles circular refs).          |
-| `keys(tbl)`                    | All keys as a list.                         |
-| `values(tbl)`                  | All values as a list.                       |
-| `map(tbl, fn)`                 | Apply `fn` to every value, preserving keys. |
-| `filter(tbl, fn)`              | Keep values matching predicate.             |
-| `contains(tbl, value, opts?)`  | Check table for value or predicate match.   |
-| `count(tbl)`                   | Total number of key-value pairs.            |
-| `deep_equal(a, b)`             | Recursive equality comparison.              |
-| `get(tbl, ...)`                | Index into nested tables by key chain.      |
-| `extend(behavior, ...)`        | Merge tables (`error`/`keep`/`force`).      |
-| `deep_extend(behavior, ...)`   | Recursive merge of hash-like sub-tables.    |
-| `spairs(tbl)`                  | Sorted key-value iterator.                  |
+| Function                      | Description                                 |
+| ----------------------------- | ------------------------------------------- |
+| `isempty(tbl)`                | `true` when list portion is empty.          |
+| `isblank(tbl)`                | `true` when table has no entries at all.    |
+| `islist(tbl)`                 | `true` for contiguous 1-based sequences.    |
+| `isarray(tbl)`                | `true` when all keys are integers.          |
+| `copy(obj)`                   | Shallow copy.                               |
+| `deepcopy(obj, noref?)`       | Deep copy (handles circular refs).          |
+| `keys(tbl)`                   | All keys as a list.                         |
+| `values(tbl)`                 | All values as a list.                       |
+| `map(tbl, fn)`                | Apply `fn` to every value, preserving keys. |
+| `filter(tbl, fn)`             | Keep values matching predicate.             |
+| `contains(tbl, value, opts?)` | Check table for value or predicate match.   |
+| `count(tbl)`                  | Total number of key-value pairs.            |
+| `deep_equal(a, b)`            | Recursive equality comparison.              |
+| `get(tbl, ...)`               | Index into nested tables by key chain.      |
+| `extend(behavior, ...)`       | Merge tables (`error`/`keep`/`force`).      |
+| `deep_extend(behavior, ...)`  | Recursive merge of hash-like sub-tables.    |
+| `spairs(tbl)`                 | Sorted key-value iterator.                  |
 
 ## Maths
 
@@ -132,11 +132,11 @@ IEEE 754 rounding and clamping helpers.
 
 ### Functions
 
-| Function                         | Description                                     |
-| -------------------------------- | ----------------------------------------------- |
-| `round(number)`                  | Round to nearest integer (half-to-even).        |
-| `round_to(number, multiple)`     | Round to nearest multiple (half-to-even).       |
-| `clamp(number, minimum, maximum)`| Clamp to `[minimum, maximum]`.                  |
+| Function                          | Description                               |
+| --------------------------------- | ----------------------------------------- |
+| `round(number)`                   | Round to nearest integer (half-to-even).  |
+| `round_to(number, multiple)`      | Round to nearest multiple (half-to-even). |
+| `clamp(number, minimum, maximum)` | Clamp to `[minimum, maximum]`.            |
 
 ## List
 
@@ -144,17 +144,17 @@ Sequence-oriented utilities operating on the array portion of tables.
 
 ### Functions
 
-| Function                          | Description                                     |
-| --------------------------------- | ----------------------------------------------- |
-| `contains(list, value)`           | Check if list contains a value.                 |
-| `extend(dst, src, start?, fin?)`  | Append range of `src` into `dst` in-place.      |
-| `slice(list, start?, finish?)`    | Create a sub-list copy.                         |
-| `unique(list, key?)`              | Remove duplicates in-place.                     |
-| `bisect(list, val, opts?)`        | Binary search for insertion point.              |
-| `reverse(list)`                   | Reverse in-place.                               |
-| `cartesian_iter(sets)`            | Iterator over Cartesian product (shared table). |
-| `cartesian_iter_copy(sets)`       | Iterator over Cartesian product (copied table). |
-| `cartesian(sets)`                 | All Cartesian product combinations.             |
+| Function                         | Description                                     |
+| -------------------------------- | ----------------------------------------------- |
+| `contains(list, value)`          | Check if list contains a value.                 |
+| `extend(dst, src, start?, fin?)` | Append range of `src` into `dst` in-place.      |
+| `slice(list, start?, finish?)`   | Create a sub-list copy.                         |
+| `unique(list, key?)`             | Remove duplicates in-place.                     |
+| `bisect(list, val, opts?)`       | Binary search for insertion point.              |
+| `reverse(list)`                  | Reverse in-place.                               |
+| `cartesian_iter(sets)`           | Iterator over Cartesian product (shared table). |
+| `cartesian_iter_copy(sets)`      | Iterator over Cartesian product (copied table). |
+| `cartesian(sets)`                | All Cartesian product combinations.             |
 
 ## Filesystem
 
@@ -163,22 +163,22 @@ pane URI parsing for WezTerm.
 
 ### Constants
 
-| Name            | Type    | Description                          |
-| --------------- | ------- | ------------------------------------ |
-| `target_triple` | string  | Platform target triple.              |
-| `is_win`        | boolean | `true` on Windows.                   |
-| `home`          | string  | User home directory (normalized).    |
+| Name            | Type    | Description                       |
+| --------------- | ------- | --------------------------------- |
+| `target_triple` | string  | Platform target triple.           |
+| `is_win`        | boolean | `true` on Windows.                |
+| `home`          | string  | User home directory (normalized). |
 
 ### Functions
 
-| Function                              | Description                                          |
-| ------------------------------------- | ---------------------------------------------------- |
-| `platform()`                          | Get platform info (OS name + boolean flags).         |
-| `basename(path)`                      | Extract final component of a path.                   |
-| `find_git_dir(directory)`             | Traverse up to find `.git/HEAD`.                     |
-| `get_hostname(pane)`                  | Hostname from pane URI (title-cased, domain removed).|
-| `get_cwd(pane, search_git_root?)`     | CWD from pane URI, optionally resolved to git root.  |
-| `get_cwd_hostname(pane, git_root?)`   | _(Deprecated)_ Returns both CWD and hostname.        |
+| Function                            | Description                                           |
+| ----------------------------------- | ----------------------------------------------------- |
+| `platform()`                        | Get platform info (OS name + boolean flags).          |
+| `basename(path)`                    | Extract final component of a path.                    |
+| `find_git_dir(directory)`           | Traverse up to find `.git/HEAD`.                      |
+| `get_hostname(pane)`                | Hostname from pane URI (title-cased, domain removed). |
+| `get_cwd(pane, search_git_root?)`   | CWD from pane URI, optionally resolved to git root.   |
+| `get_cwd_hostname(pane, git_root?)` | _(Deprecated)_ Returns both CWD and hostname.         |
 
 ## Path
 
@@ -186,18 +186,18 @@ Path abbreviation and column-budget-aware truncation.
 
 ### Constants
 
-| Name        | Type    | Description                         |
-| ----------- | ------- | ----------------------------------- |
-| `is_win`    | boolean | `true` on Windows.                  |
-| `separator` | string  | Platform path separator (`/`/`\`).  |
+| Name        | Type    | Description                        |
+| ----------- | ------- | ---------------------------------- |
+| `is_win`    | boolean | `true` on Windows.                 |
+| `separator` | string  | Platform path separator (`/`/`\`). |
 
 ### Functions
 
-| Function                    | Description                                         |
-| --------------------------- | --------------------------------------------------- |
-| `shorten(path, len)`        | Abbreviate intermediate components to `len` chars.  |
-| `shorten_to(path, max_len)` | Shorten path to fit within column budget.           |
-| `concat(...)`               | Join components with platform separator.            |
+| Function                    | Description                                        |
+| --------------------------- | -------------------------------------------------- |
+| `shorten(path, len)`        | Abbreviate intermediate components to `len` chars. |
+| `shorten_to(path, max_len)` | Shorten path to fit within column budget.          |
+| `concat(...)`               | Join components with platform separator.           |
 
 ## Examples
 
