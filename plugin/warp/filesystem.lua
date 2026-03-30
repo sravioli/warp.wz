@@ -42,10 +42,7 @@ M.platform = function()
   local is_win = sfind(M.target_triple, "windows", 1, true) ~= nil
   local is_linux = sfind(M.target_triple, "linux", 1, true) ~= nil
   local is_mac = sfind(M.target_triple, "apple", 1, true) ~= nil
-  local os_name = is_win and "windows"
-    or is_linux and "linux"
-    or is_mac and "mac"
-    or "unknown"
+  local os_name = is_win and "windows" or is_linux and "linux" or is_mac and "mac" or "unknown"
   return { os = os_name, is_win = is_win, is_linux = is_linux, is_mac = is_mac }
 end
 

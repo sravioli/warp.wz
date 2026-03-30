@@ -9,8 +9,7 @@ local col_width = str.col_width
 local str_split = str.split
 local wt_truncate_right = wt.truncate_right
 
-local str_find, str_sub, str_match, str_gsub =
-  string.find, string.sub, string.match, string.gsub
+local str_find, str_sub, str_match, str_gsub = string.find, string.sub, string.match, string.gsub
 local tbl_concat = table.concat
 local ceil, floor, max = math.ceil, math.floor, math.max
 

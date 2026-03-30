@@ -3,8 +3,7 @@
 ---@class Wezterm
 local wt = require "wezterm" --[[@as Wezterm]]
 
-local str_find, str_gsub, str_sub, str_rep =
-  string.find, string.gsub, string.sub, string.rep
+local str_find, str_gsub, str_sub, str_rep = string.find, string.gsub, string.sub, string.rep
 local tbl_remove, table_concat = table.remove, table.concat
 local ceil, floor = math.ceil, math.floor
 local huge = math.huge
