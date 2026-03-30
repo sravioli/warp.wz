@@ -17,7 +17,8 @@ local M = {}
 ---@param value T   Value to find.
 ---@return boolean `true` if `list` contains `value`.
 M.contains = function(list, value)
-  for i = 1, #list do
+  local n = #list
+  for i = 1, n do
     if list[i] == value then
       return true
     end
@@ -185,11 +186,16 @@ end
 ---@param opts? Warp.List.BisectOpts  Options.
 ---@return integer index              Insertion point.
 M.bisect = function(list, val, opts)
-  opts = opts or {}
-  local lo = opts.lo or 1
-  local hi = opts.hi or #list + 1
-  local key = opts.key
-  if opts.bound == "upper" then
+  local lo, hi, key, bound
+  if opts then
+    lo = opts.lo
+    hi = opts.hi
+    key = opts.key
+    bound = opts.bound
+  end
+  lo = lo or 1
+  hi = hi or #list + 1
+  if bound == "upper" then
     return upper_bound(list, val, lo, hi, key)
   end
   return lower_bound(list, val, lo, hi, key)
