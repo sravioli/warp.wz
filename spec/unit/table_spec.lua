@@ -571,22 +571,31 @@ describe("warp.table", function()
 
   describe("reduce", function()
     it("sums values of a list", function()
-      assert.are.equal(10, tbl.reduce({ 1, 2, 3, 4 }, function(acc, v)
-        return acc + v
-      end, 0))
+      assert.are.equal(
+        10,
+        tbl.reduce({ 1, 2, 3, 4 }, function(acc, v)
+          return acc + v
+        end, 0)
+      )
     end)
 
     it("concatenates string values", function()
       -- Order not guaranteed via pairs, so test with a single-element table.
-      assert.are.equal("xhello", tbl.reduce({ a = "hello" }, function(acc, v)
-        return acc .. v
-      end, "x"))
+      assert.are.equal(
+        "xhello",
+        tbl.reduce({ a = "hello" }, function(acc, v)
+          return acc .. v
+        end, "x")
+      )
     end)
 
     it("returns init for empty table", function()
-      assert.are.equal(42, tbl.reduce({}, function(acc, v)
-        return acc + v
-      end, 42))
+      assert.are.equal(
+        42,
+        tbl.reduce({}, function(acc, v)
+          return acc + v
+        end, 42)
+      )
     end)
 
     it("passes key to reducer", function()

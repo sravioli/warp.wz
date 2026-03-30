@@ -437,10 +437,7 @@ describe("warp.list", function()
     end)
 
     it("stops at shortest list", function()
-      assert.are.same(
-        { { 1, "a" }, { 2, "b" } },
-        list.zip({ 1, 2, 3 }, { "a", "b" })
-      )
+      assert.are.same({ { 1, "a" }, { 2, "b" } }, list.zip({ 1, 2, 3 }, { "a", "b" }))
     end)
 
     it("zips three lists", function()

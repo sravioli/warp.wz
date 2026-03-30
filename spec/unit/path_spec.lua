@@ -314,7 +314,7 @@ describe("warp.path", function()
   describe("expand", function()
     it("expands tilde to home directory", function()
       local result = path.expand "~/projects"
-      assert.is_true(result:find("/projects$") ~= nil)
+      assert.is_true(result:find "/projects$" ~= nil)
       assert.is_true(result:sub(1, 1) ~= "~")
     end)
 
