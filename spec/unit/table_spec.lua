@@ -517,6 +517,101 @@ describe("warp.table", function()
     end)
   end)
 
+  -- ── merge ────────────────────────────────────────────────────────────
+
+  describe("merge", function()
+    it("merges in-place and returns the base table", function()
+      local base = { a = 1 }
+      local ret = tbl.merge("force", base, { b = 2 })
+      assert.are.equal(base, ret)
+      assert.are.same({ a = 1, b = 2 }, base)
+    end)
+
+    it("recursively merges nested hash tables", function()
+      local base = { a = { x = 1 } }
+      tbl.merge("force", base, { a = { y = 2 } })
+      assert.are.same({ a = { x = 1, y = 2 } }, base)
+    end)
+
+    it("force overwrites conflicting leaf values", function()
+      local base = { a = { x = 1 } }
+      tbl.merge("force", base, { a = { x = 2 } })
+      assert.are.equal(2, base.a.x)
+    end)
+
+    it("keep preserves existing leaf values", function()
+      local base = { a = { x = 1 } }
+      tbl.merge("keep", base, { a = { x = 2 } })
+      assert.are.equal(1, base.a.x)
+    end)
+
+    it("errors on leaf conflict with 'error' behavior", function()
+      assert.has_error(function()
+        tbl.merge("error", { a = { x = 1 } }, { a = { x = 2 } })
+      end)
+    end)
+
+    it("replaces list-like sub-tables atomically (no combine)", function()
+      local base = { items = { 1, 2 } }
+      tbl.merge("force", base, { items = { 3, 4, 5 } })
+      assert.are.same({ 3, 4, 5 }, base.items)
+    end)
+
+    it("combine appends unique list items", function()
+      local base = { tags = { "a", "b" } }
+      tbl.merge({ behavior = "force", combine = true }, base, { tags = { "b", "c" } })
+      assert.are.same({ "a", "b", "c" }, base.tags)
+    end)
+
+    it("combine with numbers", function()
+      local base = { ids = { 1, 2, 3 } }
+      tbl.merge({ combine = true }, base, { ids = { 3, 4 } })
+      assert.are.same({ 1, 2, 3, 4 }, base.ids)
+    end)
+
+    it("combine does not affect non-list tables", function()
+      local base = { cfg = { x = 1 } }
+      tbl.merge({ behavior = "force", combine = true }, base, { cfg = { y = 2 } })
+      assert.are.same({ x = 1, y = 2 }, base.cfg)
+    end)
+
+    it("accepts string shorthand for behavior", function()
+      local base = { a = 1 }
+      tbl.merge("force", base, { a = 99 })
+      assert.are.equal(99, base.a)
+    end)
+
+    it("defaults to 'keep' behavior with opts table", function()
+      local base = { a = 1 }
+      tbl.merge({}, base, { a = 99 })
+      assert.are.equal(1, base.a)
+    end)
+
+    it("merges multiple source tables", function()
+      local base = { a = 1 }
+      tbl.merge("force", base, { b = 2 }, { c = 3 })
+      assert.are.same({ a = 1, b = 2, c = 3 }, base)
+    end)
+
+    it("skips nil source arguments", function()
+      local base = { a = 1 }
+      tbl.merge("force", base, nil, { b = 2 })
+      assert.are.same({ a = 1, b = 2 }, base)
+    end)
+
+    it("deeply merges three levels", function()
+      local base = { a = { b = { c = 1 } } }
+      tbl.merge("force", base, { a = { b = { d = 2 } } })
+      assert.are.same({ a = { b = { c = 1, d = 2 } } }, base)
+    end)
+
+    it("error behavior allows recursive merge on non-conflicting keys", function()
+      local base = { a = { x = 1 } }
+      tbl.merge("error", base, { a = { y = 2 } })
+      assert.are.same({ a = { x = 1, y = 2 } }, base)
+    end)
+  end)
+
   -- ── spairs ───────────────────────────────────────────────────────────
 
   describe("spairs", function()

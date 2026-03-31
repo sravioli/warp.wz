@@ -1,5 +1,6 @@
 ---@module "warp.table"
 
+local list = require "warp.list"
 local floor = math.floor
 local sort = table.sort
 local type, next, pairs, select = type, next, pairs, select
@@ -342,6 +343,7 @@ local function can_merge(v)
 end
 
 ---@alias Warp.Table.MergeBehavior "error"|"keep"|"force"
+---@alias Warp.Table.MergeOpts { behavior?: Warp.Table.MergeBehavior, combine?: boolean }
 
 ---Recursive worker for [extend](lua://Warp.Table.extend) and
 ---[deep_extend](lua://Warp.Table.deep_extend).
@@ -406,6 +408,62 @@ end
 ---@return table   merged Recursively merged table.
 M.deep_extend = function(behavior, ...)
   return tbl_extend_rec(behavior, true, ...)
+end
+
+---In-place deep merge of tables.
+---
+---Recursively merges key-value pairs from each source table into
+---`tbl`, modifying it directly. Non-list sub-tables are merged
+---recursively; list-like tables and non-table values are
+---overwritten according to `behavior`.
+---
+---When `opts.combine` is `true`, list-like incoming values are
+---appended to existing list values (skipping duplicates) instead
+---of overwriting them.
+---
+---`opts` can be a behavior string shorthand (`"error"`, `"keep"`,
+---or `"force"`) or a table:
+---
+---- `behavior` — `"error"` | `"keep"` | `"force"` (default `"keep"`).
+---- `combine` — append list values instead of overwriting.
+---
+---@param opts Warp.Table.MergeOpts|Warp.Table.MergeBehavior Options or behavior string.
+---@param tbl  table Base table to merge into (modified in-place).
+---@param ...  table One or more source tables.
+---@return table tbl The base table.
+M.merge = function(opts, tbl, ...)
+  if type(opts) == "string" then
+    opts = { behavior = opts }
+  end
+  local behavior = opts.behavior or "keep"
+  local combine = opts.combine
+  for i = 1, select("#", ...) do
+    local other = select(i, ...)
+    if other then
+      for k, v in pairs(other) do
+        if type(v) == "table" then
+          if combine and M.islist(v) and type(tbl[k]) == "table" then
+            list.extend_unique(tbl[k], v)
+          elseif can_merge(v) and can_merge(tbl[k]) then
+            M.merge(opts, tbl[k], v)
+          elseif behavior ~= "force" and tbl[k] ~= nil then
+            if behavior == "error" then
+              error("key found in more than one map: " .. k)
+            end
+          else
+            tbl[k] = v
+          end
+        elseif behavior ~= "force" and tbl[k] ~= nil then
+          if behavior == "error" then
+            error("key found in more than one map: " .. k)
+          end
+        else
+          tbl[k] = v
+        end
+      end
+    end
+  end
+  return tbl
 end
 
 ---Swap keys and values of a table.

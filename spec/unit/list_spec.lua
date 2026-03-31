@@ -275,6 +275,45 @@ describe("warp.list", function()
     end)
   end)
 
+  -- ── extend_unique ────────────────────────────────────────────────────
+
+  describe("extend_unique", function()
+    it("appends only unique items", function()
+      local dst = { 1, 2, 3 }
+      list.extend_unique(dst, { 3, 4, 5 })
+      assert.are.same({ 1, 2, 3, 4, 5 }, dst)
+    end)
+
+    it("returns the destination table", function()
+      local dst = { "a" }
+      assert.are.equal(dst, list.extend_unique(dst, { "b" }))
+    end)
+
+    it("handles all duplicates", function()
+      local dst = { 1, 2, 3 }
+      list.extend_unique(dst, { 1, 2, 3 })
+      assert.are.same({ 1, 2, 3 }, dst)
+    end)
+
+    it("handles empty source", function()
+      local dst = { 1, 2 }
+      list.extend_unique(dst, {})
+      assert.are.same({ 1, 2 }, dst)
+    end)
+
+    it("handles empty destination", function()
+      local dst = {}
+      list.extend_unique(dst, { 1, 2 })
+      assert.are.same({ 1, 2 }, dst)
+    end)
+
+    it("works with string values", function()
+      local dst = { "a", "b" }
+      list.extend_unique(dst, { "b", "c" })
+      assert.are.same({ "a", "b", "c" }, dst)
+    end)
+  end)
+
   -- ── cartesian_iter ───────────────────────────────────────────────────
 
   describe("cartesian_iter", function()

@@ -297,6 +297,40 @@ M.zip = function(...)
   return result
 end
 
+---Append elements from one list into another, skipping duplicates.
+---
+---For each item in `src`, scans `dst` and appends the item only
+---when it is not already present. Comparison uses raw equality
+---(`==`). Mutates and returns `dst`.
+---
+---```lua
+---M.extend_unique({ 1, 2, 3 }, { 3, 4, 5 })
+----- { 1, 2, 3, 4, 5 }
+---```
+---
+---@generic T: table
+---@param dst T     Destination list (modified in-place).
+---@param src any[] Source list.
+---@return T  dst   The destination list.
+M.extend_unique = function(dst, src)
+  local n = #dst
+  for i = 1, #src do
+    local item = src[i]
+    local found = false
+    for j = 1, n do
+      if dst[j] == item then
+        found = true
+        break
+      end
+    end
+    if not found then
+      n = n + 1
+      dst[n] = item
+    end
+  end
+  return dst
+end
+
 ---Compute Cartesian product of multiple lists (iterator).
 ---
 ---Returns an iterator yielding each combination as a shared table.
