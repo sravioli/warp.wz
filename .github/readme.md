@@ -188,31 +188,45 @@ Path abbreviation and column-budget-aware truncation.
 
 ### Constants
 
-| Name        | Type    | Description                        |
-| ----------- | ------- | ---------------------------------- |
-| `is_win`    | boolean | `true` on Windows.                 |
-| `separator` | string  | Platform path separator (`/`/`\`). |
+| Name        | Type    | Description                                               |
+| ----------- | ------- | --------------------------------------------------------- |
+| `is_win`    | boolean | Reexported from `filesystem.is_win`.                      |
+| `separator` | string  | Platform path separator (`/`/`\`), derived from `is_win`. |
 
 ### Functions
 
-| Function                    | Description                                        |
-| --------------------------- | -------------------------------------------------- |
-| `shorten(path, len)`        | Abbreviate intermediate components to `len` chars. |
-| `shorten_to(path, max_len)` | Shorten path to fit within column budget.          |
-| `concat(...)`               | Join components with platform separator.           |
-| `normalize(path)`           | Collapse `.`, `..`, repeated separators.           |
-| `dirname(path)`             | Parent directory of a path.                        |
-| `extension(path)`           | File extension including leading dot.              |
-| `is_absolute(path)`         | Check whether path is absolute.                    |
-| `expand(path)`              | Expand `~` to home directory.                      |
+| Function                    | Description                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `shorten(path, len)`        | Truncate each intermediate component to `len` chars, keeping the last component intact.                 |
+| `shorten_to(path, max_len)` | Fit a path within `max_len` visible columns by auto-shortening dirs and middle-truncating if necessary. |
+| `concat(...)`               | Join components with platform separator.                                                                |
+| `normalize(path)`           | Collapse `.`, `..`, repeated separators.                                                                |
+| `dirname(path)`             | Parent directory of a path.                                                                             |
+| `extension(path)`           | File extension including leading dot.                                                                   |
+| `is_absolute(path)`         | Check whether path is absolute.                                                                         |
+| `expand(path)`              | Expand `~` to home directory.                                                                           |
 
 ## Examples
 
-Truncate a path to fit the tab bar:
+Shorten intermediate path components to a fixed length:
 
 ```lua
-local short = warp.path.shorten_to("~/projects/my-app/src/components", 25)
+warp.path.shorten("~/projects/my-app/src/components", 1)
 -- "~/p/m/s/components"
+
+warp.path.shorten("~/projects/my-app/src/components", 3)
+-- "~/pro/my-/src/components"
+```
+
+Fit a path within a column budget (auto-selects component length,
+middle-truncates the last component when needed):
+
+```lua
+warp.path.shorten_to("~/projects/my-app/src/components", 25)
+-- "~/p/m/s/components"
+
+warp.path.shorten_to("~/projects/my-app/src/components", 14)
+-- "~/p/m/s/comp…nts"
 ```
 
 Binary search in a sorted list:

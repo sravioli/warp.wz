@@ -3,6 +3,7 @@
 ---@class Wezterm
 local wt = require "wezterm"--[[@as Wezterm]]
 
+local fs = require "warp.filesystem" --[[@as Warp.FileSystem]]
 local str = require "warp.string" --[[@as Warp.String]]
 
 local col_width = str.col_width
@@ -19,7 +20,7 @@ local M = {}
 
 ---Whether the current platform is Windows.
 ---@type boolean
-M.is_win = str_find(wt.target_triple, "windows", 1, true) ~= nil
+M.is_win = fs.is_win
 
 ---Platform-specific path separator (`\` on Windows, `/` elsewhere).
 ---@type string
@@ -309,7 +310,6 @@ M.expand = function(path)
   if second ~= "" and second ~= "/" and second ~= "\\" then
     return path
   end
-  local fs = require "warp.filesystem"
   return fs.home .. str_sub(path, 2)
 end
 
