@@ -118,6 +118,7 @@ merging, and sorted iteration.
 | `get(tbl, ...)`               | Index into nested tables by key chain.      |
 | `extend(behavior, ...)`       | Merge tables (`error`/`keep`/`force`).      |
 | `deep_extend(behavior, ...)`  | Recursive merge of hash-like sub-tables.    |
+| `merge(opts, tbl, ...)`       | In-place deep merge with `combine` support. |
 | `spairs(tbl)`                 | Sorted key-value iterator.                  |
 | `invert(tbl)`                 | Swap keys ↔ values.                         |
 | `reduce(tbl, fn, init)`       | Fold table into a single value.             |
@@ -144,6 +145,7 @@ Sequence-oriented utilities operating on the array portion of tables.
 | -------------------------------- | ----------------------------------------------- |
 | `contains(list, value)`          | Check if list contains a value.                 |
 | `extend(dst, src, start?, fin?)` | Append range of `src` into `dst` in-place.      |
+| `extend_unique(dst, src)`        | Append items from `src` skipping duplicates.    |
 | `slice(list, start?, finish?)`   | Create a sub-list copy.                         |
 | `unique(list, key?)`             | Remove duplicates in-place.                     |
 | `bisect(list, val, opts?)`       | Binary search for insertion point.              |
@@ -227,6 +229,15 @@ local defaults = { ui = { theme = "dark", font_size = 14 } }
 local overrides = { ui = { font_size = 16 } }
 local config = warp.table.deep_extend("force", defaults, overrides)
 -- { ui = { theme = "dark", font_size = 16 } }
+```
+
+In-place merge with list combining:
+
+```lua
+local base = { ui = { theme = "dark" }, plugins = { "a", "b" } }
+local extra = { ui = { font_size = 16 }, plugins = { "b", "c" } }
+warp.table.merge({ behavior = "force", combine = true }, base, extra)
+-- base is now { ui = { theme = "dark", font_size = 16 }, plugins = { "a", "b", "c" } }
 ```
 
 Column-aware string truncation:
