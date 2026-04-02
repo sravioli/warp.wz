@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [0.1.1](https://github.com/sravioli/warp.wz/compare/4a098f3415ca05150c8d8383f3036770f51a4155..0.1.1) - 2026-03-31
+#### Features
+- add extend_unique function and merge functionality with tests - ([4a098f3](https://github.com/sravioli/warp.wz/commit/4a098f3415ca05150c8d8383f3036770f51a4155)) - sravioli
+#### Documentation
+- update readme and improve path module documentation - ([bfbd350](https://github.com/sravioli/warp.wz/commit/bfbd350a56449c7d01c12cbf8919c25393a2cad0)) - sravioli
+- update readme - ([3977c1e](https://github.com/sravioli/warp.wz/commit/3977c1e0a725145b52eb55716f1748b099711cf2)) - sravioli
+
+- - -
+
 ## [0.1.0](https://github.com/sravioli/warp.wz/compare/94ac089b09d153ce4ce01ae2f719c9dd65638b65..0.1.0) - 2026-03-30
 #### Features
 - (**api**) expose missing modules in api - ([94d3b2a](https://github.com/sravioli/warp.wz/commit/94d3b2ac3e0d56ac8ca22e74a224cbe95251d594)) - sravioli
