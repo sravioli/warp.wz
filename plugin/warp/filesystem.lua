@@ -157,7 +157,11 @@ M.get_cwd = function(pane, search_git_root_instead)
   end
 
   if M.is_win then
-    cwd = sgsub(cwd, "/" .. M.home .. "(.-)$", "~%1")
+    -- file_path on Windows yields "/C:/…/" — strip the leading slash before a
+    -- drive letter and any trailing slash so downstream code sees clean paths.
+    cwd = sgsub(cwd, "^/(%a:)", "%1")
+    cwd = sgsub(cwd, "/+$", "")
+    cwd = sgsub(cwd, M.home .. "(.-)$", "~%1")
   else
     cwd = sgsub(cwd, M.home .. "(.-)$", "~%1")
   end
