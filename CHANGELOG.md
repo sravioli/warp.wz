@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [0.1.2](https://github.com/sravioli/warp.wz/compare/8a052c2fa08c83997a828dde20f39f2c357dc236..0.1.2) - 2026-04-10
+#### Bug Fixes
+- (**filasystem**) strip leading `/` on windows - ([8a052c2](https://github.com/sravioli/warp.wz/commit/8a052c2fa08c83997a828dde20f39f2c357dc236)) - sravioli
+#### Documentation
+- add type annotations section to readme - ([2bafc2d](https://github.com/sravioli/warp.wz/commit/2bafc2dbd3d3641303406bb9fa6aa27f3b922fb4)) - sravioli
+
+- - -
+
 ## [0.1.1](https://github.com/sravioli/warp.wz/compare/4a098f3415ca05150c8d8383f3036770f51a4155..0.1.1) - 2026-03-31
 #### Features
 - add extend_unique function and merge functionality with tests - ([4a098f3](https://github.com/sravioli/warp.wz/commit/4a098f3415ca05150c8d8383f3036770f51a4155)) - sravioli
