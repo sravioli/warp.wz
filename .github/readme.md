@@ -1,5 +1,6 @@
 # warp.wz
 
+[![Awesome](https://awesome.re/mentioned-badge.svg)](https://github.com/michaelbrusegard/awesome-wezterm)
 [![Tests](https://img.shields.io/github/actions/workflow/status/sravioli/warp.wz/tests.yaml?label=Tests&logo=Lua)](https://github.com/sravioli/warp.wz/actions?workflow=tests)
 [![Lint](https://img.shields.io/github/actions/workflow/status/sravioli/warp.wz/lint.yaml?label=Lint&logo=Lua)](https://github.com/sravioli/warp.wz/actions?workflow=lint)
 [![Coverage](https://img.shields.io/coverallsCoverage/github/sravioli/warp.wz?label=Coverage&logo=coveralls)](https://coveralls.io/github/sravioli/warp.wz)
@@ -27,6 +28,17 @@ local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
 
 -- from a local checkout
 local warp = wezterm.plugin.require("file:///" .. wezterm.config_dir .. "/plugins/warp.wz")
+```
+
+### Type annotations
+
+Full LuaCATS type annotations are available via
+[wezterm-types](https://github.com/DrKJeff16/wezterm-types). After installing
+the types, annotate the import to get autocompletion and type checking:
+
+```lua
+---@type Warp
+local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
 ```
 
 ## Usage
