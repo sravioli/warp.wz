@@ -6,7 +6,7 @@
 [![Coverage](https://img.shields.io/coverallsCoverage/github/sravioli/warp.wz?label=Coverage&logo=coveralls)](https://coveralls.io/github/sravioli/warp.wz)
 
 Utility library for [WezTerm](https://wezfurlong.org/wezterm/) plugins and
-configuration code.
+configs.
 
 - String utilities: padding, trimming, splitting, ANSI stripping, visible-width
   truncation
@@ -33,9 +33,9 @@ local warp = wezterm.plugin.require("file:///" .. wezterm.config_dir .. "/plugin
 
 ### Type annotations
 
-The modules include LuaCATS annotations. After installing
+Warp ships LuaCATS annotations. After installing
 [wezterm-types](https://github.com/DrKJeff16/wezterm-types), annotate the import
-to get autocompletion and type checking:
+to get completion and type checking:
 
 ```lua
 ---@type Warp
@@ -57,7 +57,7 @@ warp.filesystem.platform().os               -- "windows"
 
 ## Modules
 
-The public API exposes six modules:
+The public API has six modules:
 
 ```lua
 local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
@@ -283,5 +283,6 @@ local host = warp.filesystem.get_hostname(pane)    -- "Mybox"
 
 ## License
 
-Code is licensed under the [GNU General Public License v2](../LICENSE). Documentation
-is licensed under [Creative Commons Attribution-NonCommercial 4.0 International](../LICENSE-DOCS).
+Code is licensed under the [GNU General Public License v2](../LICENSE).
+Documentation is licensed under
+[Creative Commons Attribution-NonCommercial 4.0 International](../LICENSE-DOCS).
