@@ -5,8 +5,8 @@
 [![Lint](https://img.shields.io/github/actions/workflow/status/sravioli/warp.wz/lint.yaml?label=Lint&logo=Lua)](https://github.com/sravioli/warp.wz/actions?workflow=lint)
 [![Coverage](https://img.shields.io/coverallsCoverage/github/sravioli/warp.wz?label=Coverage&logo=coveralls)](https://coveralls.io/github/sravioli/warp.wz)
 
-General-purpose utility library for
-[WezTerm](https://wezfurlong.org/wezterm/) plugins and configuration code.
+Utility library for [WezTerm](https://wezfurlong.org/wezterm/) plugins and
+configuration code.
 
 - String utilities: padding, trimming, splitting, ANSI stripping, visible-width
   truncation
@@ -15,7 +15,8 @@ General-purpose utility library for
 - List utilities: contains, slice, unique, binary search, reverse, Cartesian
   product
 - Math helpers: IEEE 754 half-to-even rounding, round-to-multiple, clamping
-- Filesystem helpers: platform detection, home directory, git root, pane CWD/hostname
+- Filesystem helpers: platform detection, home directory, git root, pane CWD,
+  hostname
 - Path helpers: component shortening, column-budget truncation, joining
 
 ## Installation
@@ -32,9 +33,9 @@ local warp = wezterm.plugin.require("file:///" .. wezterm.config_dir .. "/plugin
 
 ### Type annotations
 
-Full LuaCATS type annotations are available via
-[wezterm-types](https://github.com/DrKJeff16/wezterm-types). After installing
-the types, annotate the import to get autocompletion and type checking:
+The modules include LuaCATS annotations. After installing
+[wezterm-types](https://github.com/DrKJeff16/wezterm-types), annotate the import
+to get autocompletion and type checking:
 
 ```lua
 ---@type Warp
@@ -56,7 +57,7 @@ warp.filesystem.platform().os               -- "windows"
 
 ## Modules
 
-The plugin provides six sub-modules, all accessible via the public API:
+The public API exposes six modules:
 
 ```lua
 local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
@@ -71,9 +72,9 @@ warp.path       -- path manipulation
 
 ## String
 
-String utilities for padding, trimming, splitting, and column-aware
-truncation. All truncation functions are ANSI-safe and operate on visible
-column widths via WezTerm's `column_width()`.
+String helpers cover padding, trimming, splitting, and column-aware truncation.
+The truncation functions are ANSI-safe and use WezTerm's `column_width()` for
+visible widths.
 
 ### Constants
 
@@ -107,8 +108,8 @@ column widths via WezTerm's `column_width()`.
 
 ## Table
 
-General-purpose table utilities: type introspection, copying, transforming,
-merging, and sorted iteration.
+Table helpers cover type checks, copying, transforms, merging, and sorted
+iteration.
 
 ### Functions
 
@@ -149,7 +150,7 @@ IEEE 754 rounding and clamping helpers.
 
 ## List
 
-Sequence-oriented utilities operating on the array portion of tables.
+List helpers operate on the array portion of tables.
 
 ### Functions
 
@@ -171,8 +172,8 @@ Sequence-oriented utilities operating on the array portion of tables.
 
 ## Filesystem
 
-Platform detection, home directory resolution, git root discovery, and
-pane URI parsing for WezTerm.
+Filesystem helpers cover platform detection, home directory resolution, git
+root discovery, and WezTerm pane URI parsing.
 
 ### Constants
 
@@ -196,7 +197,7 @@ pane URI parsing for WezTerm.
 
 ## Path
 
-Path abbreviation and column-budget-aware truncation.
+Path helpers cover normalization, joining, and compact display paths.
 
 ### Constants
 
@@ -230,8 +231,8 @@ warp.path.shorten("~/projects/my-app/src/components", 3)
 -- "~/pro/my-/src/components"
 ```
 
-Fit a path within a column budget (auto-selects component length,
-middle-truncates the last component when needed):
+Fit a path within a column budget. `shorten_to` picks the component length and
+middle-truncates the last component when needed:
 
 ```lua
 warp.path.shorten_to("~/projects/my-app/src/components", 25)
