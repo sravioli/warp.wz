@@ -8,9 +8,9 @@ local _real_os_getenv = os.getenv
 
 local M = {}
 
---- Build the wezterm mock and load warp.filesystem with a given configuration.
---- Every call returns a *fresh* copy of the module so load-time values
---- (is_win, home, target_triple) reflect the supplied configuration.
+--- Build the wezterm mock and load warp.filesystem for one test case.
+--- Each call returns a fresh module instance so load-time values
+--- (`is_win`, `home`, `target_triple`) reflect the supplied configuration.
 ---@param opts { triple: string, home?: string, hostname?: string, env?: table<string,string>, io_open?: function, io_close?: function }
 ---@return table fs  The freshly-loaded warp.filesystem module.
 function M.load_fs(opts)
@@ -28,11 +28,9 @@ function M.load_fs(opts)
     return nil
   end
 
-  -- Mock io.open / io.close if requested.
-  -- The mock only handles paths it recognises (returns a truthy handle).
-  -- Everything else falls through to the real io.open so that the luarocks
-  -- loader (present in CI) can open manifest files without crashing on a
-  -- bare nil return.
+  -- Mock io.open / io.close when requested. The mock only handles recognised
+  -- paths; everything else falls through to real io.open so the luarocks loader
+  -- in CI can still open manifest files.
   if opts.io_open then
     local mock_open = opts.io_open
     io.open = function(...)
@@ -59,7 +57,7 @@ function M.load_fs(opts)
   -- Remove cached module so it is re-executed.
   package.loaded["warp.filesystem"] = nil
 
-  -- Adjust package.path (idempotent duplicate entries are harmless).
+  -- Add plugin paths once so the test can require warp modules directly.
   if not package.path:find("plugin/%?.lua", 1, true) then
     package.path = "plugin/?.lua;plugin/?/init.lua;" .. package.path
   end
@@ -86,8 +84,8 @@ function M.mock_pane(uri)
 end
 
 --- Build a userdata-like URI for the modern WezTerm URI object.
---- Uses a real userdata (io.tmpfile) so `type(uri) == "userdata"` holds,
---- then overrides __index on a *private copy* of the metatable to inject fields.
+--- Use a real userdata (`io.tmpfile`) so `type(uri) == "userdata"` holds, then
+--- inject `file_path` and `host` through a private metatable.
 ---@param file_path string
 ---@param host?     string
 ---@return userdata
@@ -95,7 +93,7 @@ function M.userdata_uri(file_path, host)
   local u = io.tmpfile()
   local orig_mt = getmetatable(u)
   local old_index = orig_mt.__index
-  -- Build a per-object metatable so we don't pollute the shared file MT.
+  -- Use a per-object metatable so the shared file metatable stays untouched.
   local mt = {}
   for k, v in pairs(orig_mt) do
     mt[k] = v
