@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [0.1.3](https://github.com/sravioli/warp.wz/compare/fa5a1988f289ec5e6684f7ad0dc649040174229a..0.1.3) - 2026-05-14
+#### Documentation
+- (**github**) add pull request templates - ([0f987f7](https://github.com/sravioli/warp.wz/commit/0f987f78ee8eb05dc4ad1f414b0a38845e5f8057)) - sravioli
+- (**github**) polish issue templates - ([118d64e](https://github.com/sravioli/warp.wz/commit/118d64efa1af87e4e0f6fb3236ed8ec39304c9e6)) - sravioli
+- (**lua**) polish comment wording - ([65d23a4](https://github.com/sravioli/warp.wz/commit/65d23a4a6c3a2620e2152870875f8af3def3aff4)) - sravioli
+- (**lua**) polish comment wording - ([d948aa9](https://github.com/sravioli/warp.wz/commit/d948aa9a3640ec7efe24066a2ba046211a674810)) - sravioli
+- (**readme**) improve readme consistency - ([562aa25](https://github.com/sravioli/warp.wz/commit/562aa258e010ce46a654a1de3de35bdf7faeeffb)) - sravioli
+- (**readme**) improve readme clarity - ([fa5a198](https://github.com/sravioli/warp.wz/commit/fa5a1988f289ec5e6684f7ad0dc649040174229a)) - sravioli
+
+- - -
+
 ## [0.1.2](https://github.com/sravioli/warp.wz/compare/8a052c2fa08c83997a828dde20f39f2c357dc236..0.1.2) - 2026-04-10
 #### Bug Fixes
 - (**filasystem**) strip leading `/` on windows - ([8a052c2](https://github.com/sravioli/warp.wz/commit/8a052c2fa08c83997a828dde20f39f2c357dc236)) - sravioli
