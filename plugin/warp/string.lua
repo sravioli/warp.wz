@@ -292,7 +292,7 @@ M.fits = function(s, budget)
   return width(s) <= budget
 end
 
----Truncate from the **right**, appending an ellipsis.
+---Truncate from the right, appending an ellipsis.
 ---`"plasma-csd-generator.rebupk"` → `"plasma-csd-gen…"`
 ---
 ---@param s      string  Input string.
@@ -308,7 +308,7 @@ M.truncate_right = function(s, budget)
   return take_left(s, budget - ELLIPSIS_W) .. ELLIPSIS
 end
 
----Truncate from the **left**, prepending an ellipsis.
+---Truncate from the left, prepending an ellipsis.
 ---`"plasma-csd-generator.rebupk"` → `"…ator.rebupk"`
 ---
 ---@param s      string  Input string.
@@ -324,7 +324,7 @@ M.truncate_left = function(s, budget)
   return ELLIPSIS .. take_right(s, budget - ELLIPSIS_W)
 end
 
----Truncate from the **middle**, keeping both ends readable.
+---Truncate from the middle, keeping both ends readable.
 ---The left side gets the extra column when the budget is odd.
 ---`"plasma-csd-generator.rebupk"` → `"plasma-c…rebupk"`
 ---

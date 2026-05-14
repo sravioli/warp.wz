@@ -22,7 +22,7 @@ local M = {}
 ---@type boolean
 M.is_win = fs.is_win
 
----Platform-specific path separator (`\` on Windows, `/` elsewhere).
+---Path separator for the current platform (`\` on Windows, `/` elsewhere).
 ---@type string
 M.separator = M.is_win and "\\" or "/"
 
@@ -38,11 +38,11 @@ M.normalize = function(path)
   path = str_gsub(path, "\\", "/")
   path = str_gsub(path, "/+", "/")
 
-  -- Preserve leading ~
+  -- Preserve a leading `~`.
   local tilde = false
   if str_sub(path, 1, 2) == "~/" or path == "~" then
     tilde = true
-    path = str_sub(path, 2) -- strip ~, keep /...
+    path = str_sub(path, 2) -- Strip `~` and keep the following slash, if present.
   end
 
   local parts = str_split(path, "/")
@@ -71,7 +71,7 @@ M.normalize = function(path)
     result = "/" .. result
   end
   if tilde then
-    -- Avoid "~/" for bare tilde
+    -- Return bare `~` instead of `~/`.
     if result == "/" then
       result = "~"
     else
@@ -90,7 +90,7 @@ end
 ---@return string dirname Parent directory, or `.` if none.
 M.dirname = function(path)
   path = str_gsub(path, "\\", "/")
-  -- Root path (one or more slashes only)
+  -- Root path: one or more slashes only.
   if str_match(path, "^/+$") then
     return "/"
   end
@@ -100,13 +100,13 @@ M.dirname = function(path)
   end
   local parent = str_match(path, "^(.+)/[^/]*$")
   if not parent then
-    -- No slash found — check for root
+    -- No slash found; check for root.
     if str_sub(path, 1, 1) == "/" then
       return "/"
     end
     return "."
   end
-  -- Avoid returning empty string for paths like "/foo"
+  -- Avoid returning an empty string for paths like "/foo".
   if parent == "" then
     return "/"
   end
@@ -145,7 +145,7 @@ M.is_absolute = function(path)
   return false
 end
 
----Abbreviate path by shortening intermediate components to specified length.
+---Abbreviate a path by shortening intermediate components to a fixed length.
 ---
 ---@param path string File or directory path.
 ---@param len integer  Number of characters to keep per component.
@@ -205,7 +205,7 @@ local function truncate_middle(s, budget)
 
   local left = wt_truncate_right(s, left_n)
 
-  -- Collect codepoints so we can take exactly right_n columns from the end
+  -- Collect codepoints so the suffix keeps exactly `right_n` columns.
   local cps = {}
   local cp_count = 0
   for cp in str_gmatch(s, "[^\128-\191][\128-\191]*") do
@@ -213,7 +213,7 @@ local function truncate_middle(s, budget)
     cps[cp_count] = cp
   end
 
-  -- Find start index for rightmost `right_n` columns (avoids table.insert prepend)
+  -- Find the start index for the rightmost `right_n` columns without prepending.
   local start_idx = cp_count + 1
   local w = 0
   for i = cp_count, 1, -1 do
@@ -228,7 +228,7 @@ local function truncate_middle(s, budget)
   return left .. ellipsis .. tbl_concat(cps, "", start_idx, cp_count)
 end
 
---- Count occurrences of a literal substring using string.find (JIT-friendly).
+---Count occurrences of a literal substring using `string.find`.
 ---@param s   string  Haystack.
 ---@param sub string  Needle to count.
 ---@return integer count Number of occurrences.
@@ -266,20 +266,20 @@ M.shorten_to = function(path, max_len)
   local dir_count = is_rooted and (sep_count - 1) or sep_count
   local sep_w = sep_count * col_width(sep)
 
-  -- No directory prefix: middle-truncate the bare name
+  -- No directory prefix: middle-truncate the bare name.
   if dir_count <= 0 then
     return truncate_middle(last, max_len)
   end
 
-  -- Happy path: last component fits in full; shorten dir components as needed
+  -- The last component fits in full; shorten directory components as needed.
   local dir_budget = max_len - sep_w - last_w
-  if dir_budget >= dir_count then -- at least 1 col per dir component
+  if dir_budget >= dir_count then -- At least 1 column per directory component.
     local per = floor(dir_budget / dir_count)
     return M.shorten(path, per)
   end
 
-  -- Dirs at minimum (1 char each); give the rest to the last component via
-  -- middle-truncation so the path shape is preserved and stays readable.
+  -- Keep directories at their minimum width, then give the rest to the final
+  -- component via middle truncation so the path shape stays readable.
   local last_budget = max(3, max_len - sep_w - dir_count)
   local truncated_last = truncate_middle(last, last_budget)
   return M.shorten(prefix .. truncated_last, 1)

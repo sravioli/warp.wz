@@ -80,10 +80,10 @@ M.isarray = function(tbl)
   return true
 end
 
----Shallow copy of a table.
+---Shallow-copy a table.
 ---
 ---Creates a new table with the same key-value pairs. Nested tables
----are not cloned — they share the same reference. Non-table values
+---are not cloned; they share the same reference. Non-table values
 ---are returned as-is. Metatables are not copied.
 ---
 ---@param obj any Value to copy. Non-tables are returned as-is.
@@ -99,14 +99,14 @@ M.copy = function(obj)
   return copy
 end
 
----Deep copy of a table.
+---Deep-copy a table.
 ---
 ---Recursively copies all nested tables, producing a fully
 ---independent clone. Metatables are preserved on every level.
 ---Non-table values are returned as-is.
 ---
 ---When `noref` is `false` (default) each table is copied at most
----once and circular references are handled — all references to the
+---once and circular references are handled. All references to the
 ---same source table point to one copy. When `noref` is `true` every
 ---occurrence produces a new copy, which is faster for tables with
 ---many unique sub-tables but will loop infinitely on cyclic
@@ -198,7 +198,7 @@ end
 ---Filter a table using a predicate function.
 ---
 ---Creates a new list containing only the values for which `fn`
----returns a truthy value. Keys are discarded — the result is
+---returns a truthy value. Keys are discarded, and the result is
 ---always a flat list. Iteration follows `pairs()` order (not
 ---guaranteed to be stable).
 ---
@@ -218,7 +218,7 @@ M.filter = function(tbl, fn)
   return result
 end
 
----Check if a table contains a given value.
+---Check whether a table contains a value.
 ---
 ---Scans all values via `pairs()`. Comparison uses raw equality
 ---(`==`). When `opts.predicate` is `true`, `value` is treated as
@@ -248,7 +248,7 @@ M.contains = function(tbl, value, opts)
   return false
 end
 
----Count all entries in a table.
+---Count every entry in a table.
 ---
 ---Returns the total number of key-value pairs (array and hash).
 ---For list-like tables the result equals `#tbl`; for mixed or hash
@@ -384,9 +384,9 @@ end
 ---each source table in order. The `behavior` parameter controls
 ---what happens when a key appears in more than one table:
 ---
----- `"error"` — raise an error.
----- `"keep"` — use the value from the leftmost table.
----- `"force"` — use the value from the rightmost table.
+--- - `"error"`: raise an error.
+--- - `"keep"`: use the value from the leftmost table.
+--- - `"force"`: use the value from the rightmost table.
 ---
 ---@param behavior Warp.Table.MergeBehavior Conflict strategy.
 ---@param ...      table Two or more tables to merge.
@@ -401,7 +401,7 @@ end
 ---merges values that are non-list tables. List-like tables and
 ---non-table values are overwritten according to `behavior`, not
 ---merged. This is useful for combining nested configuration tables
----where lists should be treated as atomic values.
+---where lists are treated as atomic values.
 ---
 ---@param behavior Warp.Table.MergeBehavior Conflict strategy.
 ---@param ...      table Two or more tables to merge.
@@ -424,8 +424,8 @@ end
 ---`opts` can be a behavior string shorthand (`"error"`, `"keep"`,
 ---or `"force"`) or a table:
 ---
----- `behavior` — `"error"` | `"keep"` | `"force"` (default `"keep"`).
----- `combine` — append list values instead of overwriting.
+--- - `behavior`: `"error"` | `"keep"` | `"force"` (default `"keep"`).
+--- - `combine`: append list values instead of overwriting.
 ---
 ---@param opts Warp.Table.MergeOpts|Warp.Table.MergeBehavior Options or behavior string.
 ---@param tbl  table Base table to merge into (modified in-place).

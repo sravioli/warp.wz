@@ -99,7 +99,7 @@ describe("path + string + maths full-stack integration", function()
 
       local short = path.shorten_to(cwd, tab_width)
       assert.is_true(str.col_width(short) <= tab_width)
-      -- Should still look like a path
+      -- The shortened value still looks like a path.
       assert.is_truthy(short:find "/")
     end)
 

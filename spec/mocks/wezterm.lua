@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------------------------
--- spec/mocks/wezterm.lua — minimal wezterm mock for unit tests
+-- spec/mocks/wezterm.lua: minimal wezterm mock for unit tests
 -- ---------------------------------------------------------------------------
 
 local M = {}

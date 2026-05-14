@@ -157,7 +157,7 @@ M.get_cwd = function(pane, search_git_root_instead)
   end
 
   if M.is_win then
-    -- file_path on Windows yields "/C:/…/" — strip the leading slash before a
+    -- file_path on Windows yields "/C:/…/"; strip the leading slash before a
     -- drive letter and any trailing slash so downstream code sees clean paths.
     cwd = sgsub(cwd, "^/(%a:)", "%1")
     cwd = sgsub(cwd, "/+$", "")
@@ -177,7 +177,7 @@ end
 ---Check whether a path is a directory.
 ---
 ---Uses `io.open` to probe the path. Not 100% reliable on all
----platforms but avoids `lfs` or FFI dependencies — good enough for
+---platforms but avoids `lfs` or FFI dependencies, which is enough for
 ---WezTerm configuration code.
 ---
 ---@param path string Path to check.

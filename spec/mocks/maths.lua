@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------------------------
--- spec/mocks/maths.lua — warp.maths mock for unit tests
+-- spec/mocks/maths.lua: warp.maths mock for unit tests
 -- ---------------------------------------------------------------------------
 
 return {

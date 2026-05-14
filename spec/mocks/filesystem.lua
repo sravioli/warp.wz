@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------------------------
--- spec/mocks/filesystem.lua — warp.filesystem mock helpers for unit tests
+-- spec/mocks/filesystem.lua: warp.filesystem mock helpers for unit tests
 -- ---------------------------------------------------------------------------
 
 local _real_io_open = io.open
@@ -45,7 +45,7 @@ function M.load_fs(opts)
   end
   io.close = opts.io_close or _real_io_close
 
-  -- Provide a minimal `wezterm` module.
+  -- Install a minimal `wezterm` module.
   package.loaded["wezterm"] = {
     home = home,
     hostname = function()

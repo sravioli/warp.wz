@@ -16,7 +16,7 @@ local magic = 2 ^ 52 + 2 ^ 51
 ---
 ---Uses an IEEE 754 double-precision trick: adding then subtracting a magic constant
 ---forces the floating-point unit to round to the nearest representable integer. Ties
----are broken by rounding to the nearest **even** integer (banker's rounding), e.g.
+---are broken by rounding to the nearest even integer (banker's rounding), e.g.
 ---`0.5` → `0`, `1.5` → `2`, `2.5` → `2`.
 ---
 ---Only accurate for numbers whose absolute value is less than

@@ -61,7 +61,7 @@ describe("path + string integration", function()
       -- Very tight budget forces 1-char dirs AND middle-truncates the last part
       local result = path.shorten_to("src/components/MyVeryLongComponentName.tsx", 20)
       assert.is_true(str.col_width(result) <= 20)
-      -- Result should still contain "/" separators showing path structure
+      -- Result still contains "/" separators, preserving path shape.
       assert.is_truthy(result:find "/")
     end)
 
