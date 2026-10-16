@@ -193,7 +193,8 @@ root discovery, and WezTerm pane URI parsing.
 | `get_hostname(pane)`                | Hostname from pane URI (title-cased, domain removed). |
 | `get_cwd(pane, search_git_root?)`   | CWD from pane URI, optionally resolved to git root.   |
 | `get_cwd_hostname(pane, git_root?)` | _(Deprecated)_ Returns both CWD and hostname.         |
-| `is_dir(path)`                      | Check whether path is a directory.                    |
+| `is_dir(path)`                      | Check whether path is a directory (falls back to `read_dir`). |
+| `mkdir(path)`                       | Create a directory and parents without a shell; returns `ok, err`. |
 | `read_file(path)`                   | Read entire contents of a small file.                 |
 
 ## Path

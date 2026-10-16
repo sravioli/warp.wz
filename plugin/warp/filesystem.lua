@@ -176,9 +176,9 @@ end
 
 ---Check whether a path is a directory.
 ---
----Uses `io.open` to probe the path. Not 100% reliable on all
----platforms but avoids `lfs` or FFI dependencies, which is enough for
----WezTerm configuration code.
+---Probes with `io.open(path .. "/.")` first (works on POSIX), then falls
+---back to `wezterm.read_dir`, which is reliable on Windows where the
+---`io.open` trick always fails. Never raises.
 ---
 ---@param path string Path to check.
 ---@return boolean
@@ -188,7 +188,49 @@ M.is_dir = function(path)
     ioclose(handle)
     return true
   end
+  local read_dir = wt.read_dir
+  if type(read_dir) == "function" then
+    local ok, entries = pcall(read_dir, path)
+    return ok and type(entries) == "table"
+  end
   return false
+end
+
+---Characters `cmd.exe` would interpret even inside an argv element.
+local CMD_META = '[%%&|<>^"!%c]'
+
+---Create a directory and any missing parents (like `mkdir -p`).
+---
+---Runs `mkdir` through `warp.process.run` (argv, no shell string on POSIX).
+---On Windows `mkdir` is a `cmd.exe` builtin, so paths containing cmd
+---metacharacters (`% & | < > ^ " !` or control characters) are refused
+---rather than risk being interpreted. Do not call while the config is being
+---evaluated: it may spawn a process.
+---
+---@param path string Directory to create.
+---@return boolean ok      True when the directory exists afterwards.
+---@return string|nil err  Reason on failure.
+M.mkdir = function(path)
+  if type(path) ~= "string" or path == "" then
+    return false, "mkdir: path must be a non-empty string"
+  end
+  if M.is_dir(path) then
+    return true
+  end
+  local argv
+  if M.is_win then
+    if sfind(path, CMD_META) then
+      return false, "mkdir: refusing path with cmd.exe metacharacters: " .. path
+    end
+    argv = { "cmd.exe", "/d", "/c", "mkdir", (sgsub(path, "/", "\\")) }
+  else
+    argv = { "mkdir", "-p", "--", path }
+  end
+  local ok, _, stderr = require("warp.process").run(argv)
+  if ok or M.is_dir(path) then
+    return true
+  end
+  return false, (stderr ~= "" and stderr) or ("mkdir failed: " .. path)
 end
 
 ---Read the entire contents of a small file.
