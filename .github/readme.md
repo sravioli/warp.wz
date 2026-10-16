@@ -57,7 +57,7 @@ warp.filesystem.platform().os               -- "windows"
 
 ## Modules
 
-The public API has six modules:
+The public API has seven modules:
 
 ```lua
 local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
@@ -68,6 +68,7 @@ warp.table      -- general table utilities
 warp.string     -- string utilities
 warp.filesystem -- OS / pane helpers
 warp.path       -- path manipulation
+warp.process    -- executable lookup and argv-only child processes
 ```
 
 ## String
@@ -218,6 +219,33 @@ Path helpers cover normalization, joining, and compact display paths.
 | `extension(path)`           | File extension including leading dot.                                                                   |
 | `is_absolute(path)`         | Check whether path is absolute.                                                                         |
 | `expand(path)`              | Expand `~` to home directory.                                                                           |
+
+## Process
+
+Process helpers find executables and run them without a shell. Call them from
+actions or event handlers, not while the config is being evaluated.
+
+### Functions
+
+| Function                | Description                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------- |
+| `which(name, opts?)`    | Find an executable via `opts.path`, `opts.dirs`, `PATH`, then well-known dirs. Memoized.     |
+| `default_dirs()`        | Well-known install dirs (Homebrew, Cargo, Nix, WinGet, Scoop, …) GUI apps often miss.        |
+| `clear_cache()`         | Forget memoized `which` results.                                                             |
+| `run(argv, opts?)`      | `pcall`-wrapped `run_child_process`; returns `ok, stdout, stderr` with CRs stripped.         |
+| `lines(text)`           | Split output into non-empty lines (CRLF safe).                                               |
+| `quote(arg, style?)`    | Quote one argument for `"posix"` (default), `"powershell"`, or `"cmd"`.                      |
+| `join(argv, style?)`    | Quote and join argv into a command line, adding `&` for quoted PowerShell programs.          |
+| `style_for(shell)`      | Pick a quote style from a shell path or name.                                                |
+
+```lua
+local ok, out = warp.process.run { "zoxide", "query", "--list" }
+if ok then
+  for _, dir in ipairs(warp.process.lines(out)) do
+    -- ...
+  end
+end
+```
 
 ## Examples
 

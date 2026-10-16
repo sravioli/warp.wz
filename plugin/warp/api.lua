@@ -8,6 +8,7 @@
 ---@field table      Warp.Table      General table utilities.
 ---@field filesystem Warp.FileSystem Filesystem helpers.
 ---@field path       Warp.Path       Path manipulation helpers.
+---@field process    Warp.Process    Executable lookup and argv helpers.
 ---@field string     Warp.String     String utilities.
 return {
   list = require "warp.list",
@@ -15,5 +16,6 @@ return {
   table = require "warp.table",
   filesystem = require "warp.filesystem",
   path = require "warp.path",
+  process = require "warp.process",
   string = require "warp.string",
 }
