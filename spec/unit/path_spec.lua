@@ -199,6 +199,33 @@ describe("warp.path", function()
     it("handles tilde with trailing slash", function()
       assert.are.equal("~", path.normalize "~/")
     end)
+
+    it("keeps drive roots and never climbs above them", function()
+      assert.are.equal("C:/b", path.normalize "C:\\a\\..\\b")
+      assert.are.equal("C:/", path.normalize "C:\\a\\..\\..")
+      assert.are.equal("C:/", path.normalize "C:")
+      assert.are.equal("c:/x", path.normalize "c://x/")
+    end)
+
+    it("keeps backslash UNC shares on any platform", function()
+      assert.are.equal("//srv/share/x", path.normalize "\\\\srv\\share\\a\\..\\x")
+      assert.are.equal("//srv/share", path.normalize "\\\\srv\\share\\..\\..")
+      assert.are.equal("//srv", path.normalize "\\\\srv")
+    end)
+
+    it("strips Windows verbatim prefixes", function()
+      assert.are.equal("C:/x/y", path.normalize "\\\\?\\C:\\x\\y")
+      assert.are.equal("//srv/share/z", path.normalize "\\\\?\\UNC\\srv\\share\\z")
+    end)
+
+    it("treats a leading // as UNC only on Windows", function()
+      assert.are.equal("/srv/share", path.normalize "//srv/share")
+      path.is_win = true
+      local ok, res = pcall(path.normalize, "//srv/share/..")
+      path.is_win = false
+      assert.is_true(ok)
+      assert.are.equal("//srv/share", res)
+    end)
   end)
 
   -- ── dirname ──────────────────────────────────────────────────────────
@@ -333,6 +360,44 @@ describe("warp.path", function()
 
     it("does not expand ~user (only bare ~)", function()
       assert.are.equal("~user/foo", path.expand "~user/foo")
+    end)
+  end)
+
+  -- ── tilde ────────────────────────────────────────────────────────────
+
+  describe("tilde", function()
+    local home = require("warp.filesystem").home:gsub("[/\\]+$", "")
+
+    it("collapses the home directory", function()
+      assert.are.equal("~", path.tilde(home))
+      assert.are.equal("~/code/x", path.tilde(home .. "/code/x"))
+    end)
+
+    it("accepts backslashes", function()
+      assert.are.equal("~/code", path.tilde((home .. "/code"):gsub("/", "\\")))
+    end)
+
+    it("matches whole components only", function()
+      assert.are.equal(home .. "x/y", path.tilde(home .. "x/y"))
+    end)
+
+    it("leaves other paths unchanged", function()
+      assert.are.equal("/elsewhere", path.tilde "/elsewhere")
+    end)
+
+    it("round-trips with expand", function()
+      assert.are.equal("~/a", path.tilde(path.expand "~/a"))
+    end)
+
+    it("is case-insensitive on Windows only", function()
+      local upper = home:upper() .. "/a"
+      if upper ~= home .. "/a" then
+        assert.are.equal(upper, path.tilde(upper))
+        path.is_win = true
+        local res = path.tilde(upper)
+        path.is_win = false
+        assert.are.equal("~/a", res)
+      end
     end)
   end)
 end)

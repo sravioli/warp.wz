@@ -214,11 +214,12 @@ Path helpers cover normalization, joining, and compact display paths.
 | `shorten(path, len)`        | Truncate each intermediate component to `len` chars, keeping the last component intact.                 |
 | `shorten_to(path, max_len)` | Fit a path within `max_len` visible columns by auto-shortening dirs and middle-truncating if necessary. |
 | `concat(...)`               | Join components with platform separator.                                                                |
-| `normalize(path)`           | Collapse `.`, `..`, repeated separators.                                                                |
+| `normalize(path)`           | Collapse `.`, `..`, repeated separators; keeps drive/UNC roots and strips `\\?\` verbatim prefixes.     |
 | `dirname(path)`             | Parent directory of a path.                                                                             |
 | `extension(path)`           | File extension including leading dot.                                                                   |
 | `is_absolute(path)`         | Check whether path is absolute.                                                                         |
 | `expand(path)`              | Expand `~` to home directory.                                                                           |
+| `tilde(path)`               | Inverse of `expand`: replace a leading home directory with `~`.                                         |
 
 ## Process
 

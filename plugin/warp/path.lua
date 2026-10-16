@@ -10,8 +10,8 @@ local col_width = str.col_width
 local str_split = str.split
 local wt_truncate_right = wt.truncate_right
 
-local str_byte, str_find, str_gmatch, str_sub, str_match, str_gsub =
-  string.byte, string.find, string.gmatch, string.sub, string.match, string.gsub
+local str_byte, str_find, str_gmatch, str_sub, str_match, str_gsub, str_lower =
+  string.byte, string.find, string.gmatch, string.sub, string.match, string.gsub, string.lower
 local tbl_concat = table.concat
 local ceil, floor, max = math.ceil, math.floor, math.max
 
@@ -32,15 +32,39 @@ M.separator = M.is_win and "\\" or "/"
 ---to forward slashes. Preserves a leading `~` and trailing separator
 ---only when the path is root (`/`).
 ---
+---Windows roots are kept intact and never climbed above with `..`:
+--- - drive roots: `C:\a\..\..` → `C:/`
+--- - UNC shares: `\\srv\share\a\..` → `//srv/share` (a leading `//` is
+---   treated as UNC only on Windows; elsewhere it collapses to `/`)
+--- - verbatim prefixes: `\\?\C:\x` → `C:/x`, `\\?\UNC\srv\share` → `//srv/share`
+---
 ---@param path string File or directory path.
 ---@return string normalized Normalized path.
 M.normalize = function(path)
+  local unc = false
+  local rest = str_match(path, "^[\\/][\\/]%?[\\/]UNC[\\/](.*)$")
+  if rest then
+    path, unc = rest, true
+  else
+    rest = str_match(path, "^[\\/][\\/]%?[\\/](.*)$")
+    if rest then
+      path = rest
+    elseif str_match(path, "^\\\\[^\\/]") or (M.is_win and str_match(path, "^//[^/]")) then
+      path, unc = str_sub(path, 3), true
+    end
+  end
+
   path = str_gsub(path, "\\", "/")
   path = str_gsub(path, "/+", "/")
 
+  local drive = not unc and (str_match(path, "^(%a:)/") or str_match(path, "^(%a:)$"))
+  if drive then
+    path = "/" .. str_sub(path, 4)
+  end
+
   -- Preserve a leading `~`.
   local tilde = false
-  if str_sub(path, 1, 2) == "~/" or path == "~" then
+  if not unc and not drive and (str_sub(path, 1, 2) == "~/" or path == "~") then
     tilde = true
     path = str_sub(path, 2) -- Strip `~` and keep the following slash, if present.
   end
@@ -48,10 +72,20 @@ M.normalize = function(path)
   local parts = str_split(path, "/")
   local stack = {}
   local n = 0
-  local is_abs = str_sub(path, 1, 1) == "/"
+  local is_abs = unc or str_sub(path, 1, 1) == "/"
 
-  for i = 1, #parts do
-    local p = parts[i]
+  -- `//server/share` is the root of a UNC path: `..` never climbs above it.
+  local unc_root = {}
+  local i = 1
+  while unc and #unc_root < 2 and i <= #parts do
+    if parts[i] ~= "" then
+      unc_root[#unc_root + 1] = parts[i]
+    end
+    i = i + 1
+  end
+
+  for j = i, #parts do
+    local p = parts[j]
     if p == ".." then
       if n > 0 and stack[n] ~= ".." then
         stack[n] = nil
@@ -67,6 +101,13 @@ M.normalize = function(path)
   end
 
   local result = tbl_concat(stack, "/")
+  if unc then
+    local root = "//" .. tbl_concat(unc_root, "/")
+    return result == "" and root or (root .. "/" .. result)
+  end
+  if drive then
+    return drive .. "/" .. result
+  end
   if is_abs then
     result = "/" .. result
   end
@@ -311,6 +352,33 @@ M.expand = function(path)
     return path
   end
   return fs.home .. str_sub(path, 2)
+end
+
+---Collapse the user home directory prefix to `~` (inverse of `expand`).
+---
+---Separator-agnostic, and case-insensitive on Windows. Only whole path
+---components match: with home `/home/me`, `/home/media` is left alone.
+---Matching paths are returned with forward slashes; others unchanged.
+---
+---@param path string File or directory path.
+---@return string path Path with the home prefix replaced by `~`.
+M.tilde = function(path)
+  local home = str_gsub(fs.home or "", "[/\\]+$", "")
+  if home == "" then
+    return path
+  end
+  local p = str_gsub(path, "\\", "/")
+  local hk, pk = str_gsub(home, "\\", "/"), p
+  if M.is_win then
+    hk, pk = str_lower(hk), str_lower(pk)
+  end
+  if pk == hk then
+    return "~"
+  end
+  if str_sub(pk, 1, #hk + 1) == hk .. "/" then
+    return "~" .. str_sub(p, #hk + 1)
+  end
+  return path
 end
 
 return M
