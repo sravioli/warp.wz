@@ -1,318 +1,360 @@
 # warp.wz
 
 [![Awesome](https://awesome.re/mentioned-badge.svg)](https://github.com/michaelbrusegard/awesome-wezterm)
-[![Tests](https://img.shields.io/github/actions/workflow/status/sravioli/warp.wz/tests.yaml?label=Tests&logo=Lua)](https://github.com/sravioli/warp.wz/actions?workflow=tests)
-[![Lint](https://img.shields.io/github/actions/workflow/status/sravioli/warp.wz/lint.yaml?label=Lint&logo=Lua)](https://github.com/sravioli/warp.wz/actions?workflow=lint)
+[![Tests](https://img.shields.io/github/actions/workflow/status/sravioli/warp.wz/tests.yaml?style=flat-square&label=tests)](https://github.com/sravioli/warp.wz/actions/workflows/tests.yaml)
+[![Lint](https://img.shields.io/github/actions/workflow/status/sravioli/warp.wz/lint.yaml?style=flat-square&label=lint)](https://github.com/sravioli/warp.wz/actions/workflows/lint.yaml)
 [![Coverage](https://img.shields.io/coverallsCoverage/github/sravioli/warp.wz?label=Coverage&logo=coveralls)](https://coveralls.io/github/sravioli/warp.wz)
+[![Code license](https://img.shields.io/badge/code-GPL--2.0-blue?style=flat-square)](../LICENSE)
+[![Docs license](https://img.shields.io/badge/docs-CC_BY--NC_4.0-blue?style=flat-square)](../LICENSE-DOCS)
 
-Utility library for [WezTerm](https://wezfurlong.org/wezterm/) plugins and
-configs.
+String, table, list, path, and process utilities for [WezTerm](https://wezterm.org/).
 
-- String utilities: padding, trimming, splitting, ANSI stripping, visible-width
-  truncation
-- Table utilities: type checks, shallow/deep copy, map/filter, merge, sorted
-  iteration
-- List utilities: contains, slice, unique, binary search, reverse, Cartesian
-  product
-- Math helpers: IEEE 754 half-to-even rounding, round-to-multiple, clamping
-- Filesystem helpers: platform detection, home directory, git root, pane CWD,
-  hostname
-- Path helpers: component shortening, column-budget truncation, joining
+Merge config, size status labels, read pane directories, or run child
+processes from argument lists. All seven modules share one import; importing
+them does not start child processes.
 
-## Installation
+[Quick start](#quick-start) · [Usage](#usage) · [Configuration](#configuration) · [API reference](#api-reference) · [Troubleshooting](#troubleshooting) · [Development](#development) · [License](#license)
+
+## Quick start
+
+### Requirements
+
+Requires **WezTerm [`20230320-124340-559cb7b0`](https://wezterm.org/config/lua/wezterm.plugin/require.html)
+or newer** and Git. No plugin dependencies or special fonts are required.
+
+Process helpers need their target executable; directory creation uses `mkdir`
+on POSIX or `cmd.exe` on Windows. Run potentially yielding helpers from
+callbacks, not during config evaluation.
+
+### Install and run
+
+Put this in `wezterm.lua`:
 
 ```lua
 local wezterm = require "wezterm"
-
--- from git
 local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
+local config = wezterm.config_builder()
 
--- from a local checkout
-local warp = wezterm.plugin.require("file:///" .. wezterm.config_dir .. "/plugins/warp.wz")
+config.window_background_opacity = warp.maths.clamp(0.9, 0, 1)
+wezterm.log_info(warp.string.trim "  Warp loaded  ")
+
+return config
 ```
 
-### Type annotations
+Reload to apply opacity `0.9`; **Ctrl+Shift+L** shows `Warp loaded`.
+In an existing config, reuse its builder and add the import/helper calls
+before its final return.
 
-Warp ships LuaCATS annotations. After installing
-[wezterm-types](https://github.com/DrKJeff16/wezterm-types), annotate the import
-to get completion and type checking:
+## Usage
+
+### Merge config maps without appending key lists
+
+```lua
+local base = { ui = { size = 12 }, names = { "a", "b" } }
+local custom = { ui = { size = 14 }, names = { "c" } }
+local merged = warp.table.deep_extend("force", base, custom)
+```
+
+`merged` has size `14` and names `{ "c" }`. `deep_extend` creates a new outer
+table, but nested values may still be shared. Use `deepcopy` for independent
+nested data. `merge("force", base, custom)` changes `base` in place.
+
+### Size a plain-text label
+
+```lua
+local label = warp.string.truncate_middle("a-long-workspace-name", 12)
+local padded = warp.string.ljust(label, 14)
+wezterm.log_info(padded)
+```
+
+Widths are measured in terminal columns. Truncate plain text before adding
+styles. Width measurement strips CSI escapes, but truncation does not
+preserve arbitrary ANSI sequences. Tiny budgets can still return an ellipsis.
+
+### Run a program from a key action
+
+Add this binding alongside existing keys:
+
+```lua
+config.keys = {
+  {
+    key = "g",
+    mods = "CTRL|SHIFT",
+    action = wezterm.action_callback(function()
+      local ok, stdout, stderr = warp.process.run { "git", "--version" }
+      if ok then
+        wezterm.log_info(stdout)
+      else
+        wezterm.log_error(stderr)
+      end
+    end),
+  },
+}
+```
+
+Press **Ctrl+Shift+G** and inspect the debug overlay. Pass a dense argv list,
+not a shell command string. `run` copies arguments and does not invoke a shell.
+Quoting helpers prepare trusted text for a shell; they do not make untrusted
+input safe.
+
+## Configuration
+
+### Example
+
+Warp has no global configuration or setup function. Pass options to the
+relevant operation. For example, this custom merge appends unique list values:
+
+```lua
+local base = { names = { "a", "b" } }
+warp.table.merge({ behavior = "force", combine = true }, base, {
+  names = { "b", "c" },
+})
+```
+
+The result in `base.names` is `{ "a", "b", "c" }`.
+Other optional scalar arguments and their defaults appear in the API tables.
+
+### Options
+
+#### String splitting, table operations, and binary search
+
+The paths below identify options inside each operation's options argument.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `split.plain` | `boolean?` | `nil` | `split`/`gsplit`: treat the separator literally when true; otherwise use a Lua pattern. |
+| `split.trimempty` | `boolean?` | `nil` | Trim empty edge segments when true. |
+| `contains.predicate` | `boolean?` | `nil` | `table.contains`: treat the value argument as a predicate when true. |
+| `merge.behavior` | `"error"\|"keep"\|"force"` | `"keep"` | Reject conflicts, keep earlier values, or use later values. |
+| `merge.combine` | `boolean?` | `nil` | Append unique incoming list values instead of replacing them. |
+| `bisect.lo` | `integer` | `1` | Inclusive lower search bound. |
+| `bisect.hi` | `integer` | `#list + 1` | Computed exclusive upper bound. |
+| `bisect.key` | `fun(value: any): any` | `nil` | Project both target and list elements before comparison. |
+| `bisect.bound` | `"lower"\|"upper"` | `"lower"` | First or last valid insertion point in a sorted list. |
+
+#### Executable lookup and execution
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `which.path` | `string?` | `nil` | Override the program name/path being searched. |
+| `which.dirs` | `string[]?` | `nil` | Extra directories searched before `PATH` and built-in locations. |
+| `which.cache` | `boolean` | `true` | Cache both successes and misses for the current Lua context. |
+| `run.resolve` | `boolean` | `true` | Resolve argv's first element through `which`; otherwise use it unchanged. |
+| `run.which` | `Warp.Process.WhichOpts?` | `nil` | Forward lookup options; nested paths are `run.which.path`, `.dirs`, `.cache` as above. |
+
+### Behavior and precedence
+
+Per-call options do not persist. Executable lookup is the exception: it caches
+both successes and misses in Lua state until `clear_cache` or a config reload.
+Search order is explicit path/name, extra directories, `PATH`, then common
+install locations. A name containing a separator is checked directly.
+Lookup tests whether a file is readable, not whether it has executable permission.
+
+`extend`/`deep_extend` return new outer tables; `merge` changes its destination.
+Recursive merges combine map-like tables, while lists replace according to
+the conflict policy unless `combine` is enabled. An empty table can replace
+a list but merges into a map. Assigned subtrees may still reference inputs.
+Warp does not schema-validate options or general utility inputs.
+
+List operations use the dense `1..#list` portion. Cartesian iterators can
+produce very large outputs: `cartesian_iter` reuses one tuple table,
+`cartesian_iter_copy` copies each, and `cartesian` materializes all tuples.
+
+## API reference
+
+All names are fully qualified below; calls use `.`. `?` marks optional
+arguments or nullable results. `Iterator` means a Lua generic-for iterator;
+`T` denotes an element type, not a runtime class.
+
+### Strings
+
+| Signature → Return type | Description |
+| --- | --- |
+| `warp.string.strip_ansi(text) → string` | Remove CSI escape sequences; does not strip every OSC/VT sequence. |
+| `warp.string.width(text) → number` | Strip CSI sequences, then measure visible columns. |
+| `warp.string.col_width(text) → integer` | Direct alias of `wezterm.column_width`; no extra stripping. |
+| `warp.string.pad(value, padding?, character?) → string` | Pad both sides; default one space each. Padding may be `{ left, right }`; missing sides then mean zero. |
+| `warp.string.padl(value, padding?, character?) → string` | Pad left; default one space. |
+| `warp.string.padr(value, padding?, character?) → string` | Pad right; default one space. |
+| `warp.string.trim(text) → string` | Trim surrounding Lua whitespace. |
+| `warp.string.gsplit(text, separator, options?) → Iterator` | Iterate pieces; empty separator splits bytes. Zero-width non-empty patterns can raise. |
+| `warp.string.split(text, separator, options?) → string[]` | Collect `gsplit`; options are [above](#string-splitting-table-operations-and-binary-search). |
+| `warp.string.fits(text, budget) → boolean` | Test visible width against a column budget. |
+| `warp.string.truncate_right(text, budget) → string` | Retain the left portion and append an ellipsis. |
+| `warp.string.truncate_left(text, budget) → string` | Retain the right portion and prepend an ellipsis. |
+| `warp.string.truncate_middle(text, budget) → string` | Keep both ends, favoring the left for an odd remaining budget. |
+| `warp.string.truncate(mode, text, budget) → string` | Dispatch `"left"`, `"middle"`, or `"right"`; invalid modes raise. |
+| `warp.string.starts_with(text, prefix) → boolean` | Literal prefix comparison. |
+| `warp.string.ends_with(text, suffix) → boolean` | Literal suffix comparison; empty suffix succeeds. |
+| `warp.string.ljust(text, width, character?) → string` | Pad on the right to at least this column width; default character is a space. |
+| `warp.string.rjust(text, width, character?) → string` | Pad on the left; does not truncate a wider value. |
+
+Truncation iterates UTF-8 codepoints, not grapheme clusters. When a non-fitting
+string's budget is no wider than the ellipsis, the result is still `…`,
+including a zero budget. Padding repeats the supplied string by count, so use
+a one-column character when the final width must match.
+
+### Tables
+
+| Signature → Return type | Description |
+| --- | --- |
+| `warp.table.isempty(value) → boolean` | True for `nil` or zero array length; ignores hash-only entries. |
+| `warp.table.isblank(value) → boolean` | True for `nil` or a table with no keys. |
+| `warp.table.islist(value) → boolean` | Test dense 1-based sequence shape; `{}` is a list. |
+| `warp.table.isarray(value) → boolean` | Test integer-only keys, including sparse/zero/negative keys; `{}` qualifies. |
+| `warp.table.copy(value) → any` | Shallow-copy a table without its metatable; scalars pass through. |
+| `warp.table.deepcopy(value, noref?) → any` | Copy nested values and preserve metatables; default tracks shared/cyclic references. `noref = true` is unsafe on cycles. |
+| `warp.table.keys(table) → any[]` | Collect keys in unspecified order. |
+| `warp.table.values(table) → any[]` | Collect values in unspecified order. |
+| `warp.table.map(table, fn) → table` | Map `fn(value)`, preserving keys. |
+| `warp.table.filter(table, fn) → any[]` | Keep matching values as a new list, discarding keys. |
+| `warp.table.contains(table, value, options?) → boolean` | Raw equality or predicate mode over all values. |
+| `warp.table.count(table) → integer` | Count all key/value pairs. |
+| `warp.table.deep_equal(a, b) → boolean` | Recursive equality; respects equality metamethods, with no cycle guard for distinct cyclic tables. |
+| `warp.table.get(table, ...) → any?` | Traverse a key chain; return `nil` for missing/intermediate non-table values or no keys. |
+| `warp.table.extend(behavior, ...) → table` | New shallow merged table; behavior is `"error"`, `"keep"`, or `"force"`. |
+| `warp.table.deep_extend(behavior, ...) → table` | New recursively merged maps; list values are atomic. |
+| `warp.table.merge(options, destination, ...) → table` | In-place deep merge; options may be a behavior string or a settings table. |
+| `warp.table.spairs(table) → Iterator` | Yield `(key, value)` in ascending key order; keys must be mutually comparable. |
+| `warp.table.invert(table) → table` | Swap keys/values; duplicate values choose a winner in unspecified traversal order. |
+| `warp.table.reduce(table, fn, initial) → any` | Fold with `fn(accumulator, value, key)` in `pairs` order. |
+
+### Lists and maths
+
+| Signature → Return type | Description |
+| --- | --- |
+| `warp.list.contains(list, value) → boolean` | Raw-equality scan of sequence values. |
+| `warp.list.extend(destination, source, start?, finish?) → table` | Append an inclusive source range in place; defaults `1..#source`. |
+| `warp.list.extend_unique(destination, source) → table` | Append values not already equal to a destination item; mutate destination. |
+| `warp.list.slice(list, start?, finish?) → table` | Copy an inclusive range; defaults `1..#list`. |
+| `warp.list.unique(list, key?) → table` | Deduplicate in place, optionally projecting comparison keys. |
+| `warp.list.bisect(list, value, options?) → integer` | Find a sorted insertion point; [search options](#string-splitting-table-operations-and-binary-search). |
+| `warp.list.reverse(list) → table` | Reverse sequence elements in place; preserve hash keys. |
+| `warp.list.cartesian_iter(sets) → Iterator` | Yield `(index, tuple)` using one reused tuple. |
+| `warp.list.cartesian_iter_copy(sets) → Iterator` | Yield independent tuple copies. |
+| `warp.list.cartesian(sets) → table[]` | Materialize all combinations as independent tuples. |
+| `warp.list.find(list, fn) → T?, integer?` | Return the first matching value and index. |
+| `warp.list.flatten(list, depth?) → table` | New flattened sequence; default depth is unlimited. |
+| `warp.list.zip(...) → table[]` | Tuple parallel lists, stopping at the shortest. |
+| `warp.maths.round(number) → number` | IEEE-754 half-to-even rounding; only accurate for magnitudes below `2^51`. |
+| `warp.maths.round_to(number, multiple) → number` | Half-to-even rounding to a nonzero multiple, within the quotient's supported magnitude. |
+| `warp.maths.clamp(number, minimum, maximum) → number` | Clamp to inclusive ordered bounds. |
+
+### Filesystem and paths
+
+| Signature → Return type | Description |
+| --- | --- |
+| `warp.filesystem.platform() → Warp.FileSystem.Platform` | Return `{ os, is_win, is_linux, is_mac }` from WezTerm's target triple. |
+| `warp.filesystem.basename(path) → string` | Last component after trimming trailing slash/backslash separators. |
+| `warp.filesystem.find_git_dir(directory) → string?` | Walk upward looking for `.git/HEAD`; return a home-abbreviated root. Does not resolve Git worktree `.git` files. |
+| `warp.filesystem.get_hostname(pane) → string` | Short, initially capitalized URI hostname; may be `""` without a CWD URI. |
+| `warp.filesystem.get_cwd(pane, git_root?) → string` | Decode pane CWD, abbreviate home, and optionally seek a Git root; missing CWD yields `""`. |
+| `warp.filesystem.get_cwd_hostname(pane, git_root?) → string, string` | Deprecated: call the focused CWD/hostname operations instead. |
+| `warp.filesystem.is_dir(path) → boolean` | Probe a directory, falling back to protected `wezterm.read_dir`. |
+| `warp.filesystem.mkdir(path) → boolean, string?` | Create parents or return an error; Windows invokes `cmd.exe` and rejects its metacharacters in the path. |
+| `warp.filesystem.read_file(path) → string?` | Read a whole small file; return `nil` if it cannot open. |
+| `warp.path.normalize(path) → string` | Collapse separators, `.` and `..`; output forward slashes, retaining supported drive/UNC roots and removing verbatim prefixes. |
+| `warp.path.dirname(path) → string` | Parent directory; `"."` when there is no directory component. |
+| `warp.path.extension(path) → string` | Last extension including its dot; `""` for none or a lone dotfile name. |
+| `warp.path.is_absolute(path) → boolean` | Test forward-slash roots and drive-letter paths; normalize raw UNC paths first. |
+| `warp.path.shorten(path, length) → string` | Byte-shorten intermediate components split on the platform separator; retain the last component. |
+| `warp.path.shorten_to(path, budget) → string` | Best-effort compact display path; not a strict width cap for tiny budgets or mixed separators. |
+| `warp.path.concat(...) → string` | Join with the platform separator; does not normalize or reset at absolute arguments. |
+| `warp.path.expand(path) → string` | Expand a leading `~`, not `~otheruser` or environment variables. |
+| `warp.path.tilde(path) → string` | Replace a whole leading home component with `~`; case-insensitive on Windows. |
+
+Path helpers only manipulate text. They do not resolve actual filesystem
+locations or guard against directory traversal.
+`shorten` uses native separators; `shorten_to` also parses forward slashes, so
+take care with mixed separators and Windows paths. Check the resulting width
+before placing a path in a hard column budget.
+
+### Processes
+
+| Signature → Return type | Description |
+| --- | --- |
+| `warp.process.which(name, options?) → string?` | Find a readable candidate; Windows also tries `.exe`, `.cmd`, `.bat` for extensionless names. |
+| `warp.process.default_dirs() → string[]` | Return platform-specific common install directories. |
+| `warp.process.clear_cache() → nil` | Clear successful and failed executable lookups. |
+| `warp.process.run(argv, options?) → boolean, string, string` | Return success, stdout, stderr; catch spawn exceptions and strip carriage returns. |
+| `warp.process.lines(text?) → string[]` | Split output into non-empty CRLF-safe lines. |
+| `warp.process.quote(argument, style?) → string` | Quote trusted shell text for `"posix"` (default), `"powershell"`, or `"cmd"`; not a general untrusted-input sanitizer. |
+| `warp.process.join(argv, style?) → string` | Quote/join shell text; prepend PowerShell `&` when the program is quoted. |
+| `warp.process.style_for(shell?) → string` | Infer quoting style; omitted shell defaults to PowerShell on Windows, POSIX otherwise. |
+
+### Constants
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `warp.string.empty` | `""` | Empty text. |
+| `warp.string.space` | `" "` | One space. |
+| `warp.filesystem.is_win` | Computed `boolean` | Windows target detection. |
+| `warp.filesystem.home` | Computed `string` | `USERPROFILE`, then `HOME`, then WezTerm's `home` field; forward slashes. |
+| `warp.path.is_win` | `warp.filesystem.is_win` | Shared platform flag. |
+| `warp.path.separator` | `"\\"` or `"/"` | Native join/shorten separator. |
+
+## Troubleshooting
+
+### A newly installed executable is not found
+
+Call `warp.process.clear_cache()` or reload; failed lookups are cached too.
+Use an explicit path or `which.dirs` when a GUI-launched WezTerm lacks your
+login shell's `PATH`. `run` returns failures rather than logging them for you.
+
+### A shortened label is too wide
+
+Do not assume `path.shorten_to` fits every budget. Use a final plain-string
+truncation and check `string.width`; handle budgets below the ellipsis width
+explicitly. Apply color formatting only after choosing the final text.
+
+Update plugins with `wezterm.plugin.update_all()` from the debug overlay and
+reload. Report [issues](https://github.com/sravioli/warp.wz/issues) with the
+operation, input, platform, plugin revision, and WezTerm build.
+
+## Development
+
+### Local checkout
+
+Clone into `plugins/warp.wz` beneath `wezterm.config_dir`, then replace
+the remote import:
+
+```lua
+local wezterm = require "wezterm"
+local warp = wezterm.plugin.require(
+  "file:///" .. wezterm.config_dir .. "/plugins/warp.wz"
+)
+```
+
+### Editor support
+
+Follow the [wezterm-types setup](https://github.com/DrKJeff16/wezterm-types):
 
 ```lua
 ---@type Warp
 local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
 ```
 
-## Usage
+Its [Warp definitions](https://github.com/DrKJeff16/wezterm-types/blob/main/lua/wezterm/types/plugins/warp.lua)
+omit the `process` module, `filesystem.mkdir`, and `path.tilde`.
+The source module is `Warp.Api`; use its
+[annotations](../plugin/warp/api.lua) and linked modules for this revision.
 
-```lua
-local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
+### Checks and contributions
 
-warp.list.reverse { 3, 2, 1 }              -- { 1, 2, 3 }
-warp.maths.clamp(15, 0, 10)                -- 10
-warp.table.deep_equal({ a = 1 }, { a = 1 }) -- true
-warp.string.truncate_middle("long-name", 8) -- "lon…ame"
-warp.path.shorten_to("~/projects/app", 12)  -- "~/p/app"
-warp.filesystem.platform().os               -- "windows"
+From the repository root, with Lua 5.4 and the named tools installed:
+
+```sh
+busted --verbose
+luacheck plugin
+selene --display-style=quiet plugin
+stylua --check .
 ```
 
-## Modules
-
-The public API has seven modules:
-
-```lua
-local warp = wezterm.plugin.require "https://github.com/sravioli/warp.wz"
-
-warp.list       -- list (sequence) utilities
-warp.maths      -- math helpers
-warp.table      -- general table utilities
-warp.string     -- string utilities
-warp.filesystem -- OS / pane helpers
-warp.path       -- path manipulation
-warp.process    -- executable lookup and argv-only child processes
-```
-
-## String
-
-String helpers cover padding, trimming, splitting, and column-aware truncation.
-The truncation functions are ANSI-safe and use WezTerm's `column_width()` for
-visible widths.
-
-### Constants
-
-| Name        | Type     | Description                          |
-| ----------- | -------- | ------------------------------------ |
-| `empty`     | string   | Empty string (`""`).                 |
-| `space`     | string   | Single space (`" "`).                |
-| `col_width` | function | WezTerm's `column_width()` function. |
-
-### Functions
-
-| Function                     | Description                                       |
-| ---------------------------- | ------------------------------------------------- |
-| `strip_ansi(s)`              | Strip ANSI/VT escape sequences.                   |
-| `width(s)`                   | Visible column width (ANSI-safe).                 |
-| `pad(s, padding?, ch?)`      | Pad both sides.                                   |
-| `padl(s, padding?, ch?)`     | Pad left side.                                    |
-| `padr(s, padding?, ch?)`     | Pad right side.                                   |
-| `trim(s)`                    | Remove leading/trailing whitespace.               |
-| `gsplit(s, sep, opts?)`      | Iterator over substrings split by pattern.        |
-| `split(s, sep, opts?)`       | Split string into a list.                         |
-| `fits(s, budget)`            | Check whether string fits within column budget.   |
-| `truncate_right(s, budget)`  | Truncate from right with ellipsis.                |
-| `truncate_left(s, budget)`   | Truncate from left with ellipsis.                 |
-| `truncate_middle(s, budget)` | Truncate from middle with ellipsis.               |
-| `truncate(mode, s, budget)`  | Truncate using strategy: `left`/`middle`/`right`. |
-| `starts_with(s, prefix)`     | Check if string starts with prefix.               |
-| `ends_with(s, suffix)`       | Check if string ends with suffix.                 |
-| `ljust(s, width, ch?)`       | Left-justify to total column width.               |
-| `rjust(s, width, ch?)`       | Right-justify to total column width.              |
-
-## Table
-
-Table helpers cover type checks, copying, transforms, merging, and sorted
-iteration.
-
-### Functions
-
-| Function                      | Description                                 |
-| ----------------------------- | ------------------------------------------- |
-| `isempty(tbl)`                | `true` when list portion is empty.          |
-| `isblank(tbl)`                | `true` when table has no entries at all.    |
-| `islist(tbl)`                 | `true` for contiguous 1-based sequences.    |
-| `isarray(tbl)`                | `true` when all keys are integers.          |
-| `copy(obj)`                   | Shallow copy.                               |
-| `deepcopy(obj, noref?)`       | Deep copy (handles circular refs).          |
-| `keys(tbl)`                   | All keys as a list.                         |
-| `values(tbl)`                 | All values as a list.                       |
-| `map(tbl, fn)`                | Apply `fn` to every value, preserving keys. |
-| `filter(tbl, fn)`             | Keep values matching predicate.             |
-| `contains(tbl, value, opts?)` | Check table for value or predicate match.   |
-| `count(tbl)`                  | Total number of key-value pairs.            |
-| `deep_equal(a, b)`            | Recursive equality comparison.              |
-| `get(tbl, ...)`               | Index into nested tables by key chain.      |
-| `extend(behavior, ...)`       | Merge tables (`error`/`keep`/`force`).      |
-| `deep_extend(behavior, ...)`  | Recursive merge of hash-like sub-tables.    |
-| `merge(opts, tbl, ...)`       | In-place deep merge with `combine` support. |
-| `spairs(tbl)`                 | Sorted key-value iterator.                  |
-| `invert(tbl)`                 | Swap keys ↔ values.                         |
-| `reduce(tbl, fn, init)`       | Fold table into a single value.             |
-
-## Maths
-
-IEEE 754 rounding and clamping helpers.
-
-### Functions
-
-| Function                          | Description                               |
-| --------------------------------- | ----------------------------------------- |
-| `round(number)`                   | Round to nearest integer (half-to-even).  |
-| `round_to(number, multiple)`      | Round to nearest multiple (half-to-even). |
-| `clamp(number, minimum, maximum)` | Clamp to `[minimum, maximum]`.            |
-
-## List
-
-List helpers operate on the array portion of tables.
-
-### Functions
-
-| Function                         | Description                                     |
-| -------------------------------- | ----------------------------------------------- |
-| `contains(list, value)`          | Check if list contains a value.                 |
-| `extend(dst, src, start?, fin?)` | Append range of `src` into `dst` in-place.      |
-| `extend_unique(dst, src)`        | Append items from `src` skipping duplicates.    |
-| `slice(list, start?, finish?)`   | Create a sub-list copy.                         |
-| `unique(list, key?)`             | Remove duplicates in-place.                     |
-| `bisect(list, val, opts?)`       | Binary search for insertion point.              |
-| `reverse(list)`                  | Reverse in-place.                               |
-| `cartesian_iter(sets)`           | Iterator over Cartesian product (shared table). |
-| `cartesian_iter_copy(sets)`      | Iterator over Cartesian product (copied table). |
-| `cartesian(sets)`                | All Cartesian product combinations.             |
-| `find(list, fn)`                 | First element matching predicate.               |
-| `flatten(list, depth?)`          | Flatten nested lists.                           |
-| `zip(...)`                       | Combine parallel lists into tuples.             |
-
-## Filesystem
-
-Filesystem helpers cover platform detection, home directory resolution, git
-root discovery, and WezTerm pane URI parsing.
-
-### Constants
-
-| Name     | Type    | Description                       |
-| -------- | ------- | --------------------------------- |
-| `is_win` | boolean | `true` on Windows.                |
-| `home`   | string  | User home directory (normalized). |
-
-### Functions
-
-| Function                            | Description                                           |
-| ----------------------------------- | ----------------------------------------------------- |
-| `platform()`                        | Get platform info (OS name + boolean flags).          |
-| `basename(path)`                    | Extract final component of a path.                    |
-| `find_git_dir(directory)`           | Traverse up to find `.git/HEAD`.                      |
-| `get_hostname(pane)`                | Hostname from pane URI (title-cased, domain removed). |
-| `get_cwd(pane, search_git_root?)`   | CWD from pane URI, optionally resolved to git root.   |
-| `get_cwd_hostname(pane, git_root?)` | _(Deprecated)_ Returns both CWD and hostname.         |
-| `is_dir(path)`                      | Check whether path is a directory (falls back to `read_dir`). |
-| `mkdir(path)`                       | Create a directory and parents without a shell; returns `ok, err`. |
-| `read_file(path)`                   | Read entire contents of a small file.                 |
-
-## Path
-
-Path helpers cover normalization, joining, and compact display paths.
-
-### Constants
-
-| Name        | Type    | Description                                               |
-| ----------- | ------- | --------------------------------------------------------- |
-| `is_win`    | boolean | Reexported from `filesystem.is_win`.                      |
-| `separator` | string  | Platform path separator (`/`/`\`), derived from `is_win`. |
-
-### Functions
-
-| Function                    | Description                                                                                             |
-| --------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `shorten(path, len)`        | Truncate each intermediate component to `len` chars, keeping the last component intact.                 |
-| `shorten_to(path, max_len)` | Fit a path within `max_len` visible columns by auto-shortening dirs and middle-truncating if necessary. |
-| `concat(...)`               | Join components with platform separator.                                                                |
-| `normalize(path)`           | Collapse `.`, `..`, repeated separators; keeps drive/UNC roots and strips `\\?\` verbatim prefixes.     |
-| `dirname(path)`             | Parent directory of a path.                                                                             |
-| `extension(path)`           | File extension including leading dot.                                                                   |
-| `is_absolute(path)`         | Check whether path is absolute.                                                                         |
-| `expand(path)`              | Expand `~` to home directory.                                                                           |
-| `tilde(path)`               | Inverse of `expand`: replace a leading home directory with `~`.                                         |
-
-## Process
-
-Process helpers find executables and run them without a shell. Call them from
-actions or event handlers, not while the config is being evaluated.
-
-### Functions
-
-| Function                | Description                                                                                  |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| `which(name, opts?)`    | Find an executable via `opts.path`, `opts.dirs`, `PATH`, then well-known dirs. Memoized.     |
-| `default_dirs()`        | Well-known install dirs (Homebrew, Cargo, Nix, WinGet, Scoop, …) GUI apps often miss.        |
-| `clear_cache()`         | Forget memoized `which` results.                                                             |
-| `run(argv, opts?)`      | `pcall`-wrapped `run_child_process`; returns `ok, stdout, stderr` with CRs stripped.         |
-| `lines(text)`           | Split output into non-empty lines (CRLF safe).                                               |
-| `quote(arg, style?)`    | Quote one argument for `"posix"` (default), `"powershell"`, or `"cmd"`.                      |
-| `join(argv, style?)`    | Quote and join argv into a command line, adding `&` for quoted PowerShell programs.          |
-| `style_for(shell)`      | Pick a quote style from a shell path or name.                                                |
-
-```lua
-local ok, out = warp.process.run { "zoxide", "query", "--list" }
-if ok then
-  for _, dir in ipairs(warp.process.lines(out)) do
-    -- ...
-  end
-end
-```
-
-## Examples
-
-Shorten intermediate path components to a fixed length:
-
-```lua
-warp.path.shorten("~/projects/my-app/src/components", 1)
--- "~/p/m/s/components"
-
-warp.path.shorten("~/projects/my-app/src/components", 3)
--- "~/pro/my-/src/components"
-```
-
-Fit a path within a column budget. `shorten_to` picks the component length and
-middle-truncates the last component when needed:
-
-```lua
-warp.path.shorten_to("~/projects/my-app/src/components", 25)
--- "~/p/m/s/components"
-
-warp.path.shorten_to("~/projects/my-app/src/components", 14)
--- "~/p/m/s/comp…nts"
-```
-
-Binary search in a sorted list:
-
-```lua
-local t = { 1, 3, 5, 7, 9 }
-local idx = warp.list.bisect(t, 6) -- 4 (insert before 7)
-```
-
-Deep merge configuration tables:
-
-```lua
-local defaults = { ui = { theme = "dark", font_size = 14 } }
-local overrides = { ui = { font_size = 16 } }
-local config = warp.table.deep_extend("force", defaults, overrides)
--- { ui = { theme = "dark", font_size = 16 } }
-```
-
-In-place merge with list combining:
-
-```lua
-local base = { ui = { theme = "dark" }, plugins = { "a", "b" } }
-local extra = { ui = { font_size = 16 }, plugins = { "b", "c" } }
-warp.table.merge({ behavior = "force", combine = true }, base, extra)
--- base is now { ui = { theme = "dark", font_size = 16 }, plugins = { "a", "b", "c" } }
-```
-
-Column-aware string truncation:
-
-```lua
-warp.string.truncate_middle("plasma-csd-generator.rebupk", 18)
--- "plasma-c…rebupk"
-```
-
-Get CWD and hostname from a WezTerm pane:
-
-```lua
-local cwd = warp.filesystem.get_cwd(pane, false)  -- "~/projects/warp.wz"
-local host = warp.filesystem.get_hostname(pane)    -- "Mybox"
-```
+Unit/integration specs use WezTerm mocks. Optional microbenchmarks live in
+`bench` with `.chrono` configuration; they are not correctness tests.
+See the [contribution guide](contributing.md) and use Conventional Commits.
 
 ## License
 
-Code is licensed under the [GNU General Public License v2](../LICENSE).
-Documentation is licensed under
-[Creative Commons Attribution-NonCommercial 4.0 International](../LICENSE-DOCS).
+Code: [GNU GPL v2](../LICENSE). Documentation:
+[CC BY-NC 4.0](../LICENSE-DOCS). Preserve existing attribution.
