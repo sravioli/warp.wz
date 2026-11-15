@@ -52,9 +52,9 @@ You need:
 3. To test the plugin locally, point your WezTerm config at the checkout:
 
    ```lua
-   local warp = wezterm.plugin.require(
-     "file:///" .. wezterm.config_dir .. "/plugins/warp.wz"
-   )
+   local root = wezterm.home_dir .. "/path/to/warp.wz/plugin/"
+   package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
+   local warp = require "warp.api"
    ```
 
 4. Run the checks to confirm the setup works:

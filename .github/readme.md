@@ -315,14 +315,14 @@ operation, input, platform, plugin revision, and WezTerm build.
 
 ### Local checkout
 
-Clone into `plugins/warp.wz` beneath `wezterm.config_dir`, then replace
-the remote import:
+Load the working tree directly, so edits take effect on the next config
+reload without a commit or a plugin update. Adjust the path to your clone:
 
 ```lua
 local wezterm = require "wezterm"
-local warp = wezterm.plugin.require(
-  "file:///" .. wezterm.config_dir .. "/plugins/warp.wz"
-)
+local root = wezterm.home_dir .. "/path/to/warp.wz/plugin/"
+package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
+local warp = require "warp.api"
 ```
 
 ### Editor support
