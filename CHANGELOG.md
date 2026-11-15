@@ -2,6 +2,25 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [0.2.0](https://github.com/sravioli/warp.wz/compare/7697396d2f2ace257925023cc6e026768d5e9edd..0.2.0) - 2026-11-15
+#### Features
+- (**filesystem**) add mkdir and is_dir fallback - ([7c5f20a](https://github.com/sravioli/warp.wz/commit/7c5f20ac8f8d64a4c646afaccb08a27e0d8857ff)) - sravioli
+- (**path**) add tilde and windows-aware normalize - ([6927340](https://github.com/sravioli/warp.wz/commit/69273400b567095fd1bb66cb925f8d129e00c82d)) - sravioli
+- (**process**) add process module - ([055d5d5](https://github.com/sravioli/warp.wz/commit/055d5d55872d92ce2f21192362628acb97c4dc74)) - sravioli
+#### Bug Fixes
+- (**filesystem**) match home prefix, find worktrees - ([e99709f](https://github.com/sravioli/warp.wz/commit/e99709fdf92d3b3a61f3638f28457bd7d6fb61cc)) - sravioli
+#### Performance Improvements
+- (**bootstrap**) keep plugin list across reloads - ([e49ac4d](https://github.com/sravioli/warp.wz/commit/e49ac4ddd1918fdcfdd4bf76714e54aada59d93d)) - sravioli
+- (**bootstrap**) share plugin discovery snapshot - ([7697396](https://github.com/sravioli/warp.wz/commit/7697396d2f2ace257925023cc6e026768d5e9edd)) - sravioli
+- (**string**) use native truncation - ([d08ff16](https://github.com/sravioli/warp.wz/commit/d08ff1667faf144c4715bbc729df42395c2e8e04)) - sravioli
+#### Documentation
+- (**readme**) update plugin READMEs - ([84c8888](https://github.com/sravioli/warp.wz/commit/84c8888c52b228aff09dd21a6695aa686ec6512c)) - sravioli
+#### Tests
+- (**filesystem**) cover home prefix and worktrees - ([00b00b5](https://github.com/sravioli/warp.wz/commit/00b00b5e61a474a4dbf997dfdb5272aec5a6f0b5)) - sravioli
+- (**mocks**) add truncate_left - ([a2b9403](https://github.com/sravioli/warp.wz/commit/a2b9403636746613546fd27c095f71a6ef968304)) - sravioli
+
+- - -
+
 ## [0.1.3](https://github.com/sravioli/warp.wz/compare/fa5a1988f289ec5e6684f7ad0dc649040174229a..0.1.3) - 2026-05-14
 #### Documentation
 - (**github**) add pull request templates - ([0f987f7](https://github.com/sravioli/warp.wz/commit/0f987f78ee8eb05dc4ad1f414b0a38845e5f8057)) - sravioli
