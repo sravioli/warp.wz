@@ -9,7 +9,7 @@ local ogetenv = os.getenv
 
 local schar, sfind, sgsub, smatch, ssub =
   string.char, string.find, string.gsub, string.match, string.sub
-local supper = string.upper
+local slower, supper = string.lower, string.upper
 local tonumber = tonumber
 
 ---@class Warp.FileSystem
@@ -71,19 +71,69 @@ M.basename = function(path)
   return index and ssub(trimmed_path, index) or trimmed_path
 end
 
+---Expand a leading `~` (alone or before a separator) to `M.home`.
+---@param path string
+---@return string
+local function expand_home(path)
+  if smatch(path, "^~[/\\]") or path == "~" then
+    return M.home .. ssub(path, 2)
+  end
+  return path
+end
+
+---Collapse a leading `M.home` to `~`, matching whole path components only
+---(same rule as `warp.path.tilde`; plain comparison, never a Lua pattern).
+---@param path string
+---@return string
+local function tilde_home(path)
+  local home = sgsub(M.home, "[/\\]+$", "")
+  if home == "" then
+    return path
+  end
+  local hk, pk = home, path
+  if M.is_win then
+    hk, pk = slower(hk), slower(pk)
+  end
+  if pk == hk then
+    return "~"
+  end
+  if ssub(pk, 1, #hk + 1) == hk .. "/" then
+    return "~" .. ssub(path, #hk + 1)
+  end
+  return path
+end
+
+---Whether `dir` holds a git repository: a `.git` directory, or the `.git`
+---file that worktrees and submodules use (`gitdir: ...`).
+---@param dir string
+---@return boolean
+local function has_git(dir)
+  local handle = ioopen(dir .. "/.git/HEAD", "r")
+  if handle then
+    ioclose(handle)
+    return true
+  end
+  handle = ioopen(dir .. "/.git", "r")
+  if not handle then
+    return false
+  end
+  local ok, line = pcall(handle.read, handle, "*l")
+  ioclose(handle)
+  return ok and type(line) == "string" and smatch(line, "^gitdir:") ~= nil
+end
+
 ---Find git project root.
 ---
----Traverses up the directory tree looking for a `.git` directory.
+---Traverses up the directory tree looking for a `.git` directory, or the
+---`.git` file of a worktree or submodule.
 ---
 ---@param directory string Starting directory path.
 ---@return string|nil git_root Root directory of the git repo, or nil if not found.
 M.find_git_dir = function(directory)
-  local dir = sgsub(directory, "~", M.home)
+  local dir = expand_home(directory)
   while dir do
-    local handle = ioopen(dir .. "/.git/HEAD", "r")
-    if handle then
-      ioclose(handle)
-      return (sgsub(dir, M.home, "~"))
+    if has_git(dir) then
+      return tilde_home(dir)
     elseif dir == "/" or dir == "" then
       break
     else
@@ -161,10 +211,8 @@ M.get_cwd = function(pane, search_git_root_instead)
     -- drive letter and any trailing slash so downstream code sees clean paths.
     cwd = sgsub(cwd, "^/(%a:)", "%1")
     cwd = sgsub(cwd, "/+$", "")
-    cwd = sgsub(cwd, M.home .. "(.-)$", "~%1")
-  else
-    cwd = sgsub(cwd, M.home .. "(.-)$", "~%1")
   end
+  cwd = tilde_home(cwd)
 
   if search_git_root_instead then
     local git_root = M.find_git_dir(cwd)
