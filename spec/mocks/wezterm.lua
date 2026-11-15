@@ -30,4 +30,14 @@ function M.truncate_right(s, budget)
   return table.concat(parts)
 end
 
+--- Mock truncate_left: take `budget` codepoints from the right.
+function M.truncate_left(s, budget)
+  local cps = {}
+  for cp in s:gmatch "[^\128-\191][\128-\191]*" do
+    cps[#cps + 1] = cp
+  end
+  local first = math.max(1, #cps - math.max(0, budget) + 1)
+  return table.concat(cps, "", first, #cps)
+end
+
 return M
