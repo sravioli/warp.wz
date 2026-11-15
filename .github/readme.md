@@ -345,9 +345,9 @@ From the repository root, with Lua 5.4 and the named tools installed:
 
 ```sh
 busted --verbose
-luacheck plugin
+luacheck plugin spec
 selene --display-style=quiet plugin
-stylua --check .
+stylua --check plugin spec
 ```
 
 Unit/integration specs use WezTerm mocks. Optional microbenchmarks live in
