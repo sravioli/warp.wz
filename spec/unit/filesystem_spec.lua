@@ -252,6 +252,28 @@ describe("warp.filesystem", function()
       assert.are.equal("~/myrepo", fs.find_git_dir "~/myrepo")
     end)
 
+    it("finds worktree and submodule roots with a .git file", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/user" },
+        io_open = function(path)
+          if path == "/home/user/repo/wt/.git" then
+            return {
+              read = function()
+                return "gitdir: /home/user/repo/.git/worktrees/wt"
+              end,
+            }
+          end
+          if path == "/home/user/repo/.git/HEAD" then
+            return {}
+          end
+          return nil
+        end,
+        io_close = function() end,
+      }
+      assert.are.equal("~/repo/wt", fs.find_git_dir "~/repo/wt/src")
+    end)
+
     it("stops at root /", function()
       local count = 0
       local fs = load_fs {
@@ -458,13 +480,27 @@ describe("warp.filesystem", function()
       assert.are.equal("~", fs.get_cwd(pane, false))
     end)
 
-    it("replaces home even in middle of path (gsub behavior)", function()
+    it("collapses home only as a leading path prefix", function()
       local fs = load_fs {
         triple = "x86_64-unknown-linux-gnu",
         env = { HOME = "/home/user" },
       }
-      local pane = mock_pane(userdata_uri "/var/home/user/data")
-      assert.are.equal("/var~/data", fs.get_cwd(pane, false))
+      assert.are.equal(
+        "/var/home/user/data",
+        fs.get_cwd(mock_pane(userdata_uri "/var/home/user/data"), false)
+      )
+      assert.are.equal(
+        "/home/username/x",
+        fs.get_cwd(mock_pane(userdata_uri "/home/username/x"), false)
+      )
+    end)
+
+    it("collapses a home containing pattern characters", function()
+      local fs = load_fs {
+        triple = "x86_64-unknown-linux-gnu",
+        env = { HOME = "/home/jean-luc" },
+      }
+      assert.are.equal("~/code", fs.get_cwd(mock_pane(userdata_uri "/home/jean-luc/code"), false))
     end)
 
     it("handles string URI with empty path after host", function()
