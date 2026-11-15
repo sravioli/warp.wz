@@ -54,6 +54,11 @@ describe("warp.string", function()
       assert.are.equal("abc", str.strip_ansi "\27[2Aabc")
     end)
 
+    it("strips charset designations from wezterm.format", function()
+      local s = "\27(B\27[0m\27[3m\27[38:2::192:163:110m ab\27[48:6::0:0:0:0mc\27(B\27[0m"
+      assert.are.equal(" abc", str.strip_ansi(s))
+    end)
+
     it("handles empty string", function()
       assert.are.equal("", str.strip_ansi "")
     end)

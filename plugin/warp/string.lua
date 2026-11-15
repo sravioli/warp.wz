@@ -28,12 +28,14 @@ M.space = " "
 ---@type fun(s: string): integer
 M.col_width = col_width
 
----Strip ANSI/VT escape sequences from a string.
+---Strip ANSI/VT escape sequences from a string: CSI sequences and the
+---charset designations (`ESC ( B`) that `wezterm.format` emits.
 ---
 ---@param s string Raw rendered string, may contain ANSI codes.
 ---@return string s String with ANSI sequences removed.
 local function strip_ansi(s)
-  return (str_gsub(s, "\27%[[\32-\63]*[\64-\126]", ""))
+  s = str_gsub(s, "\27%[[\32-\63]*[\64-\126]", "")
+  return (str_gsub(s, "\27[()*+]%w", ""))
 end
 M.strip_ansi = strip_ansi
 
