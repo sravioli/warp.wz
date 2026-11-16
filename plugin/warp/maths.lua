@@ -2,6 +2,7 @@
 
 local min, max = math.min, math.max
 
+---Math helpers.
 ---@class Warp.Maths
 local M = {}
 

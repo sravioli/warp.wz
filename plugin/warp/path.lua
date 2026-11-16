@@ -15,6 +15,14 @@ local str_byte, str_find, str_gmatch, str_sub, str_match, str_gsub, str_lower =
 local tbl_concat = table.concat
 local ceil, floor, max = math.ceil, math.floor, math.max
 
+---Path manipulation helpers.
+---
+---Path helpers only manipulate text. They do not resolve actual filesystem
+---locations or guard against directory traversal.
+---
+---`shorten` uses native separators. `shorten_to` also parses forward slashes, so
+---take care with mixed separators and Windows paths. Check the resulting width
+---before placing a path in a hard column budget.
 ---@class Warp.Path
 local M = {}
 
@@ -35,7 +43,7 @@ M.separator = M.is_win and "\\" or "/"
 ---Windows roots are kept intact and never climbed above with `..`:
 --- - drive roots: `C:\a\..\..` → `C:/`
 --- - UNC shares: `\\srv\share\a\..` → `//srv/share` (a leading `//` is
----   treated as UNC only on Windows; elsewhere it collapses to `/`)
+---   treated as UNC only on Windows. Elsewhere it collapses to `/`.)
 --- - verbatim prefixes: `\\?\C:\x` → `C:/x`, `\\?\UNC\srv\share` → `//srv/share`
 ---
 ---@param path string File or directory path.
@@ -358,7 +366,7 @@ end
 ---
 ---Separator-agnostic, and case-insensitive on Windows. Only whole path
 ---components match: with home `/home/me`, `/home/media` is left alone.
----Matching paths are returned with forward slashes; others unchanged.
+---Matching paths are returned with forward slashes. Others stay unchanged.
 ---
 ---@param path string File or directory path.
 ---@return string path Path with the home prefix replaced by `~`.

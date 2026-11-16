@@ -6,13 +6,14 @@ local sort = table.sort
 local type, next, pairs, select = type, next, pairs, select
 local setmetatable, getmetatable = setmetatable, getmetatable
 
+---General table utilities.
 ---@class Warp.Table
 local M = {}
 
 ---Check if a list has no array elements.
 ---
 ---Returns `true` when `tbl` is `nil` or its length is `0`.
----Hash-only entries are ignored; use
+---Hash-only entries are ignored. Use
 ---[isblank](lua://Warp.Table.isblank) to test for a completely
 ---empty table.
 ---
@@ -83,7 +84,7 @@ end
 ---Shallow-copy a table.
 ---
 ---Creates a new table with the same key-value pairs. Nested tables
----are not cloned; they share the same reference. Non-table values
+---are not cloned. They share the same reference. Non-table values
 ---are returned as-is. Metatables are not copied.
 ---
 ---@param obj any Value to copy. Non-tables are returned as-is.
@@ -251,7 +252,7 @@ end
 ---Count every entry in a table.
 ---
 ---Returns the total number of key-value pairs (array and hash).
----For list-like tables the result equals `#tbl`; for mixed or hash
+---For list-like tables the result equals `#tbl`. For mixed or hash
 ---tables it includes all keys.
 ---
 ---@param tbl table   Table to count.
@@ -275,7 +276,7 @@ end
 ---@param a any First value.
 ---@param b any Second value.
 ---@return boolean `true` if the values are deeply equal.
-local function deep_equal(a, b)
+function M.deep_equal(a, b)
   if a == b then
     return true
   end
@@ -284,7 +285,7 @@ local function deep_equal(a, b)
   end
   if type(a) == "table" then
     for k, v in pairs(a) do
-      if not deep_equal(v, b[k]) then
+      if not M.deep_equal(v, b[k]) then
         return false
       end
     end
@@ -297,7 +298,6 @@ local function deep_equal(a, b)
   end
   return false
 end
-M.deep_equal = deep_equal
 
 ---Index into a table via successive keys.
 ---
@@ -414,7 +414,7 @@ end
 ---
 ---Recursively merges key-value pairs from each source table into
 ---`tbl`, modifying it directly. Non-list sub-tables are merged
----recursively; list-like tables and non-table values are
+---recursively. List-like tables and non-table values are
 ---overwritten according to `behavior`.
 ---
 ---When `opts.combine` is `true`, list-like incoming values are

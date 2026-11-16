@@ -2,6 +2,7 @@
 
 local floor = math.floor
 
+---List (sequence) utilities.
 ---@class Warp.List
 local M = {}
 
@@ -170,8 +171,8 @@ end
 ---Binary search for an insertion point in a sorted list.
 ---
 ---Returns the index where `val` can be inserted while keeping
----`list` sorted. With `bound = "lower"` (default) returns the first
----valid position; with `bound = "upper"` returns the last valid
+---`list` sorted. With `bound = "lower"` (default) it returns the first
+---valid position. With `bound = "upper"` it returns the last valid
 ---position. Behavior is undefined on unsorted lists.
 ---
 ---```lua
@@ -204,7 +205,7 @@ end
 ---Reverse list elements in-place.
 ---
 ---Swaps elements from both ends toward the center. Only the array
----portion (`1` to `#list`) is affected; hash keys are untouched.
+---portion (`1` to `#list`) is affected. Hash keys are untouched.
 ---
 ---@generic T
 ---@param list T[] List to reverse.
@@ -334,8 +335,8 @@ end
 ---Compute Cartesian product of multiple lists (iterator).
 ---
 ---Returns an iterator yielding each combination as a shared table.
----The returned table is reused between iterations; copy it if you
----need to store or mutate individual results.
+---The returned table is reused between iterations. Copy it if you
+---need to store or modify individual results.
 ---
 ---```lua
 ---for i, combo in M.cartesian_iter({ { 1, 2 }, { "a", "b" } }) do
