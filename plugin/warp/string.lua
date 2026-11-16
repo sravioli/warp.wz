@@ -13,6 +13,12 @@ local clamp = maths.clamp
 
 local col_width = wt.column_width
 
+---String utilities.
+---
+---Truncation iterates UTF-8 codepoints, not grapheme clusters. When a string
+---does not fit and its budget is no wider than the ellipsis, the result is
+---still `…`, even for a zero budget. Padding repeats the supplied string by
+---count. Use a one-column character when the final width must match.
 ---@class Warp.String
 local M = {}
 
@@ -33,11 +39,11 @@ M.col_width = col_width
 ---
 ---@param s string Raw rendered string, may contain ANSI codes.
 ---@return string s String with ANSI sequences removed.
-local function strip_ansi(s)
+function M.strip_ansi(s)
   s = str_gsub(s, "\27%[[\32-\63]*[\64-\126]", "")
   return (str_gsub(s, "\27[()*+]%w", ""))
 end
-M.strip_ansi = strip_ansi
+local strip_ansi = M.strip_ansi
 
 ---Calculate visible string width.
 ---
@@ -47,14 +53,14 @@ M.strip_ansi = strip_ansi
 ---
 ---@param s string Input string.
 ---@return number column_width Visible column width.
-local function width(s)
+function M.width(s)
   -- Fast path: no ESC byte means no ANSI codes to strip
   if not str_find(s, "\27", 1, true) then
     return col_width(s)
   end
   return col_width(strip_ansi(s))
 end
-M.width = width
+local width = M.width
 
 ---@alias Warp.String.Padding
 ---| (integer|{ left: integer|nil, right: integer|nil })

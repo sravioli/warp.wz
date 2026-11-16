@@ -12,6 +12,7 @@ local schar, sfind, sgsub, smatch, ssub =
 local slower, supper = string.lower, string.upper
 local tonumber = tonumber
 
+---Filesystem helpers.
 ---@class Warp.FileSystem
 local M = {}
 
@@ -298,7 +299,7 @@ M.read_file = function(path)
 end
 
 ---@deprecated Use `get_cwd` and `get_hostname` separately.
----Kept for backwards compatibility; delegates to the two focused functions.
+---Kept for backwards compatibility. Delegates to the two focused functions.
 ---
 ---@param pane                    Pane    WezTerm pane object.
 ---@param search_git_root_instead boolean If true, returns git root instead of CWD.

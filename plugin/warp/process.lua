@@ -11,6 +11,7 @@ local fs = require "warp.filesystem"
 local concat, insert = table.concat, table.insert
 local sfind, sgmatch, sgsub, smatch = string.find, string.gmatch, string.gsub, string.match
 
+---Executable lookup and argv helpers.
 ---@class Warp.Process
 local M = {}
 
@@ -40,7 +41,7 @@ local function slashes(path)
   return (sgsub(path, "\\", "/"))
 end
 
----Well-known install locations that GUI-launched processes often miss
+---Well-known install locations that processes started from a GUI often miss
 ---because they do not inherit the login shell PATH.
 ---@return string[]
 function M.default_dirs()
