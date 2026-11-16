@@ -2,6 +2,23 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [0.2.1](https://github.com/sravioli/warp.wz/compare/296ee31207deb119a808cd090777b8309d61cc46..0.2.1) - 2026-11-16
+#### Bug Fixes
+- (**string**) strip charset designations in strip_ansi - ([d568df0](https://github.com/sravioli/warp.wz/commit/d568df0f459793b8c19e6f2cc5b74b26fc667ab1)) - sravioli
+#### Documentation
+- (**contributing**) document the signed-commit requirement - ([54b83e9](https://github.com/sravioli/warp.wz/commit/54b83e9592fe92b580f36303ce07f94063fd45ce)) - sravioli
+- (**contributing**) unify guides and templates - ([296ee31](https://github.com/sravioli/warp.wz/commit/296ee31207deb119a808cd090777b8309d61cc46)) - sravioli
+- (**readme**) unify badge style and add release badge - ([c4dda3a](https://github.com/sravioli/warp.wz/commit/c4dda3a21995cb4a146d416af19291c7e029a095)) - sravioli
+- (**readme**) align checks section - ([1407ff1](https://github.com/sravioli/warp.wz/commit/1407ff18d2994e08f8a00e46da2b80208f7936cd)) - sravioli
+- document working-tree local checkout setup - ([9ec9fae](https://github.com/sravioli/warp.wz/commit/9ec9faecd5fb194806daec3739858fabaf644c25)) - sravioli
+#### Continuous Integration
+- build the API reference from a majority of three LuaLS runs - ([562849d](https://github.com/sravioli/warp.wz/commit/562849dc7b3e0b6c4db7fcf30448f4839b2f2d1c)) - sravioli
+- update the actions to the versions Dependabot proposed - ([0c150c2](https://github.com/sravioli/warp.wz/commit/0c150c24becfb6ed203bc45bd1925866220c09c3)) - sravioli
+- pin StyLua to 2.6.0 - ([bfe8013](https://github.com/sravioli/warp.wz/commit/bfe80133a307bc48c3a317f9fa92743afeabecd2)) - sravioli
+- fix the flaky API check and the EditorConfig rate limit - ([05199a3](https://github.com/sravioli/warp.wz/commit/05199a3c433326f04b06a79c1bad77cb93cf428d)) - sravioli
+
+- - -
+
 ## [0.2.0](https://github.com/sravioli/warp.wz/compare/7697396d2f2ace257925023cc6e026768d5e9edd..0.2.0) - 2026-11-15
 #### Features
 - (**filesystem**) add mkdir and is_dir fallback - ([7c5f20a](https://github.com/sravioli/warp.wz/commit/7c5f20ac8f8d64a4c646afaccb08a27e0d8857ff)) - sravioli
