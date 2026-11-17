@@ -95,8 +95,13 @@ M.unique = function(list, key)
   local j = 1
   for i = 1, n do
     local v = list[i]
-    local h = key and key(v) or v
-    if not seen[h] then
+    local h
+    if key then
+      h = key(v)
+    else
+      h = v
+    end
+    if h == nil or not seen[h] then
       list[j] = v
       if h ~= nil then
         seen[h] = true

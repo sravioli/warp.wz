@@ -292,7 +292,7 @@ warp.list.cartesian_iter_copy(sets: any[][]) -> iterator: fun():integer|nil, any
 
 Compute Cartesian product of multiple lists (copying iterator).
 
-Wraps [cartesian_iter](../plugin/warp/list.lua#L353), copying
+Wraps [cartesian_iter](../plugin/warp/list.lua#L358), copying
 each yielded combination into a fresh table that the caller can
 safely store or mutate.
 
@@ -313,7 +313,7 @@ warp.list.cartesian(sets: any[][]) -> combinations: any[][]
 Compute Cartesian product of multiple lists.
 
 Collects all combinations from
-[cartesian_iter_copy](../plugin/warp/list.lua#L408) into
+[cartesian_iter_copy](../plugin/warp/list.lua#L413) into
 a single table. Each entry is an independent table that can be
 safely stored or mutated.
 
@@ -920,6 +920,44 @@ _Returns:_
 
 - `basename` (`string`): final component of the path.
 
+### warp.filesystem.expand
+
+```lua
+warp.filesystem.expand(path: string) -> expanded: string
+```
+
+Expand a leading `~` to the user home directory.
+
+Only expands a leading `~` followed by `/`, `\`, or end-of-string.
+
+**Parameters:**
+
+- `path` (`string`): file or directory path.
+
+_Returns:_
+
+- `expanded` (`string`): path with `~` replaced by the home directory.
+
+### warp.filesystem.tilde
+
+```lua
+warp.filesystem.tilde(path: string) -> path: string
+```
+
+Collapse the user home directory prefix to `~` (inverse of `expand`).
+
+Separator-agnostic, and case-insensitive on Windows. Only whole path
+components match: with home `/home/me`, `/home/media` is left alone.
+Matching paths are returned with forward slashes. Others stay unchanged.
+
+**Parameters:**
+
+- `path` (`string`): file or directory path.
+
+_Returns:_
+
+- `path` (`string`): path with the home prefix replaced by `~`.
+
 ### warp.filesystem.find_git_dir
 
 ```lua
@@ -1216,10 +1254,7 @@ _Returns:_
 warp.path.expand(path: string) -> expanded: string
 ```
 
-Expand `~` prefix to the user home directory.
-
-Requires the filesystem module to resolve the home path. Only
-expands a leading `~` followed by `/`, `\`, or end-of-string.
+Expand a leading `~` to the user home directory (see `warp.filesystem.expand`).
 
 **Parameters:**
 
@@ -1227,7 +1262,7 @@ expands a leading `~` followed by `/`, `\`, or end-of-string.
 
 _Returns:_
 
-- `expanded` (`string`): path with `~` replaced by the home directory.
+- `expanded` (`string`)
 
 ### warp.path.tilde
 
@@ -1235,11 +1270,7 @@ _Returns:_
 warp.path.tilde(path: string) -> path: string
 ```
 
-Collapse the user home directory prefix to `~` (inverse of `expand`).
-
-Separator-agnostic, and case-insensitive on Windows. Only whole path
-components match: with home `/home/me`, `/home/media` is left alone.
-Matching paths are returned with forward slashes. Others stay unchanged.
+Collapse the user home directory prefix to `~` (see `warp.filesystem.tilde`).
 
 **Parameters:**
 
@@ -1247,7 +1278,7 @@ Matching paths are returned with forward slashes. Others stay unchanged.
 
 _Returns:_
 
-- `path` (`string`): path with the home prefix replaced by `~`.
+- `path` (`string`)
 
 ## warp.process
 

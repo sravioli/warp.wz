@@ -6,8 +6,8 @@ local str = require "warp.string" --[[@as Warp.String]]
 local col_width = str.col_width
 local str_split = str.split
 
-local str_byte, str_find, str_sub, str_match, str_gsub, str_lower =
-  string.byte, string.find, string.sub, string.match, string.gsub, string.lower
+local str_byte, str_find, str_sub, str_match, str_gsub =
+  string.byte, string.find, string.sub, string.match, string.gsub
 local tbl_concat = table.concat
 local floor, max = math.floor, math.max
 
@@ -297,49 +297,18 @@ M.concat = function(...)
   return tbl_concat({ ... }, M.separator)
 end
 
----Expand `~` prefix to the user home directory.
----
----Requires the filesystem module to resolve the home path. Only
----expands a leading `~` followed by `/`, `\`, or end-of-string.
----
+---Expand a leading `~` to the user home directory (see `warp.filesystem.expand`).
 ---@param path string File or directory path.
----@return string expanded Path with `~` replaced by the home directory.
+---@return string expanded
 M.expand = function(path)
-  if str_sub(path, 1, 1) ~= "~" then
-    return path
-  end
-  local second = str_sub(path, 2, 2)
-  if second ~= "" and second ~= "/" and second ~= "\\" then
-    return path
-  end
-  return fs.home .. str_sub(path, 2)
+  return fs.expand(path)
 end
 
----Collapse the user home directory prefix to `~` (inverse of `expand`).
----
----Separator-agnostic, and case-insensitive on Windows. Only whole path
----components match: with home `/home/me`, `/home/media` is left alone.
----Matching paths are returned with forward slashes. Others stay unchanged.
----
+---Collapse the user home directory prefix to `~` (see `warp.filesystem.tilde`).
 ---@param path string File or directory path.
----@return string path Path with the home prefix replaced by `~`.
+---@return string path
 M.tilde = function(path)
-  local home = str_gsub(fs.home or "", "[/\\]+$", "")
-  if home == "" then
-    return path
-  end
-  local p = str_gsub(path, "\\", "/")
-  local hk, pk = str_gsub(home, "\\", "/"), p
-  if M.is_win then
-    hk, pk = str_lower(hk), str_lower(pk)
-  end
-  if pk == hk then
-    return "~"
-  end
-  if str_sub(pk, 1, #hk + 1) == hk .. "/" then
-    return "~" .. str_sub(p, #hk + 1)
-  end
-  return path
+  return fs.tilde(path)
 end
 
 return M

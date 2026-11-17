@@ -398,9 +398,10 @@ describe("warp.path", function()
       local upper = home:upper() .. "/a"
       if upper ~= home .. "/a" then
         assert.are.equal(upper, path.tilde(upper))
-        path.is_win = true
+        local fs = require "warp.filesystem"
+        fs.is_win = true
         local res = path.tilde(upper)
-        path.is_win = false
+        fs.is_win = false
         assert.are.equal("~/a", res)
       end
     end)

@@ -149,6 +149,14 @@ describe("warp.list", function()
       assert.are.same({ 5 }, t)
     end)
 
+    it("keeps every value whose key is nil", function()
+      local t = { "a", "a", "b" }
+      list.unique(t, function()
+        return nil
+      end)
+      assert.are.same({ "a", "a", "b" }, t)
+    end)
+
     it("uses key function for uniqueness", function()
       local t = { { id = 1 }, { id = 2 }, { id = 1 } }
       list.unique(t, function(x)
