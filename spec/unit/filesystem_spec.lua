@@ -156,8 +156,8 @@ describe("warp.filesystem", function()
     end)
 
     it("handles root path and only-slashes", function()
-      assert.are.equal("", fs.basename "/")
-      assert.are.equal("", fs.basename "///")
+      assert.are.equal("/", fs.basename "/")
+      assert.are.equal("/", fs.basename "///")
     end)
 
     it("returns filename when no directory part", function()
@@ -618,6 +618,147 @@ describe("warp.filesystem", function()
         end,
       }
       assert.is_nil(fs.read_file "/no/such/file")
+    end)
+  end)
+  -- ── write_file ───────────────────────────────────────────────────────
+
+  describe("write_file", function()
+    local fs, dir
+    before_each(function()
+      fs = load_fs { triple = "x86_64-unknown-linux-gnu", env = { HOME = "/home/user" } }
+      dir = os.tmpname()
+      os.remove(dir)
+      assert(os.execute(("mkdir -p %q"):format(dir)))
+    end)
+    after_each(function()
+      os.execute(("rm -rf %q"):format(dir))
+    end)
+
+    local function read(p)
+      local f = assert(io.open(p, "rb"))
+      local s = f:read "a"
+      f:close()
+      return s
+    end
+
+    local function leftovers()
+      local p = io.popen(("ls -A %q"):format(dir))
+      local names = p:read "a"
+      p:close()
+      return names
+    end
+
+    it("creates a new file", function()
+      assert.is_true(fs.write_file(dir .. "/a.json", "one"))
+      assert.are.equal("one", read(dir .. "/a.json"))
+      assert.are.equal("a.json\n", leftovers())
+    end)
+
+    it("replaces an existing file and leaves no temporary files", function()
+      fs.write_file(dir .. "/a.json", "one")
+      assert.is_true(fs.write_file(dir .. "/a.json", "two\r\n"))
+      assert.are.equal("two\r\n", read(dir .. "/a.json"))
+      assert.are.equal("a.json\n", leftovers())
+    end)
+
+    it("fails without raising when the directory is missing", function()
+      local ok, err = fs.write_file(dir .. "/missing/a.json", "x")
+      assert.is_false(ok)
+      assert.matches("unable to write", err)
+    end)
+
+    it("keeps the old file when the replacing rename fails (Windows path)", function()
+      fs.write_file(dir .. "/a.json", "old")
+      local real_rename = os.rename
+      local calls = 0
+      -- Like Windows: renaming onto an existing file fails; moving aside works.
+      os.rename = function(from, to)
+        calls = calls + 1
+        if to == dir .. "/a.json" and from:find "%.tmp$" then
+          return nil, "denied"
+        end
+        return real_rename(from, to)
+      end
+      local ok, err = fs.write_file(dir .. "/a.json", "new")
+      os.rename = real_rename
+      assert.is_false(ok)
+      assert.matches("unable to replace", err)
+      assert.are.equal("old", read(dir .. "/a.json"))
+      assert.are.equal("a.json\n", leftovers())
+      assert.is_true(calls >= 3)
+    end)
+
+    it("moves the old file aside when rename cannot overwrite", function()
+      fs.write_file(dir .. "/a.json", "old")
+      local real_rename = os.rename
+      local first = true
+      os.rename = function(from, to)
+        if first and to == dir .. "/a.json" then
+          first = false
+          return nil, "exists"
+        end
+        return real_rename(from, to)
+      end
+      local ok = fs.write_file(dir .. "/a.json", "new")
+      os.rename = real_rename
+      assert.is_true(ok)
+      assert.are.equal("new", read(dir .. "/a.json"))
+      assert.are.equal("a.json\n", leftovers())
+    end)
+
+    it("rejects bad arguments", function()
+      assert.is_false((fs.write_file("", "x")))
+      assert.is_false((fs.write_file(dir .. "/a", nil)))
+    end)
+  end)
+
+  -- ── state_dir / data_dir ─────────────────────────────────────────────
+
+  describe("state_dir and data_dir", function()
+    local linux, win = "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"
+
+    ---Both directories, with `env` visible while they are computed.
+    local function dirs(triple, env, home)
+      local fs = load_fs { triple = triple, env = env, home = home }
+      local real = os.getenv
+      os.getenv = function(key)
+        return env[key]
+      end
+      local state, data = fs.state_dir(), fs.data_dir()
+      os.getenv = real
+      return state, data
+    end
+
+    it("use XDG variables outside Windows", function()
+      local state, data = dirs(linux, { HOME = "/h", XDG_STATE_HOME = "/s/", XDG_DATA_HOME = "/d" })
+      assert.are.equal("/s/wezterm", state)
+      assert.are.equal("/d/wezterm", data)
+    end)
+
+    it("fall back to ~/.local outside Windows, macOS included", function()
+      for _, triple in ipairs { linux, "aarch64-apple-darwin" } do
+        local state, data = dirs(triple, { HOME = "/h", XDG_STATE_HOME = "" })
+        assert.are.equal("/h/.local/state/wezterm", state)
+        assert.are.equal("/h/.local/share/wezterm", data)
+      end
+    end)
+
+    it("use LOCALAPPDATA, then APPDATA, then the profile on Windows", function()
+      local state, data = dirs(win, {
+        USERPROFILE = "C:\\U",
+        LOCALAPPDATA = "C:\\U\\AppData\\Local",
+        XDG_DATA_HOME = "/x",
+      })
+      assert.are.equal("C:/U/AppData/Local/wezterm", state)
+      assert.are.equal("C:/U/AppData/Local/wezterm", data)
+      assert.are.equal("C:/R/wezterm", (dirs(win, { USERPROFILE = "C:\\U", APPDATA = "C:\\R" })))
+      assert.are.equal("C:/U/AppData/Local/wezterm", (dirs(win, { USERPROFILE = "C:\\U" })))
+    end)
+
+    it("return nil when no home is known, never the config directory", function()
+      local state, data = dirs(linux, {}, "")
+      assert.is_nil(state)
+      assert.is_nil(data)
     end)
   end)
 end)

@@ -2,7 +2,7 @@
 
 ---@class Wezterm
 local wt = require "wezterm"--[[@as Wezterm]]
-local wt_home, wt_hostname, wt_triple = wt.home, wt.hostname, wt.target_triple
+local wt_home, wt_hostname, wt_triple = wt.home_dir, wt.hostname, wt.target_triple
 
 local ioclose, ioopen = io.close, io.open
 local ogetenv = os.getenv
@@ -68,6 +68,9 @@ M.home = (sgsub((ogetenv "USERPROFILE" or ogetenv "HOME" or wt_home or ""), "\\"
 ---@return string basename Final component of the path.
 M.basename = function(path)
   local trimmed_path = sgsub(path, "[/\\]*$", "")
+  if trimmed_path == "" then
+    return ssub(path, 1, 1) -- POSIX: basename("/") is "/"
+  end
   local index = sfind(trimmed_path, "[^/\\]*$")
   return index and ssub(trimmed_path, index) or trimmed_path
 end
@@ -304,6 +307,152 @@ M.read_file = function(path)
   local contents = handle:read "*a"
   ioclose(handle)
   return contents
+end
+
+local tmp_seq = 0
+
+---Unique sibling of `path`, so concurrent writers (other WezTerm processes,
+---overlapping saves) never share a temporary file.
+---@param path   string
+---@param suffix string
+---@return string
+local function unique_sibling(path, suffix)
+  tmp_seq = tmp_seq + 1
+  return ("%s.%x%x%x%s"):format(path, os.time(), math.random(0, 0x7fffffff), tmp_seq, suffix)
+end
+
+---Write `contents` to a fresh file. The io/os functions are looked up per
+---call so callers' specs can stub them.
+---@param path     string
+---@param contents string
+---@return boolean ok
+---@return string|nil err
+local function write_new(path, contents)
+  local handle, err = io.open(path, "wb")
+  if not handle then
+    return false, err
+  end
+  local wrote, write_err = handle:write(contents)
+  local closed, close_err = handle:close()
+  if not wrote or not closed then
+    return false, write_err or close_err
+  end
+  return true
+end
+
+---Write a file atomically: readers see the old contents or the new ones,
+---never a half-written file.
+---
+---Writes to a unique temporary sibling, then renames it over `path`. POSIX
+---rename replaces the target in one step. On Windows `os.rename` cannot
+---replace an existing file, so the old file is moved aside first and put
+---back when the final rename fails. The parent directory must exist (see
+---`mkdir`). Never raises.
+---
+---@param path     string File to write.
+---@param contents string New contents, written byte for byte.
+---@return boolean ok      True when `path` holds `contents`.
+---@return string|nil err  Reason on failure. `path` is left as it was.
+M.write_file = function(path, contents)
+  if type(path) ~= "string" or path == "" then
+    return false, "write_file: path must be a non-empty string"
+  end
+  if type(contents) ~= "string" then
+    return false, "write_file: contents must be a string"
+  end
+  local tmp = unique_sibling(path, ".tmp")
+  local ok, err = write_new(tmp, contents)
+  if not ok then
+    os.remove(tmp)
+    return false, ("write_file: unable to write %s: %s"):format(tmp, tostring(err))
+  end
+  if os.rename(tmp, path) then
+    return true
+  end
+
+  local target = io.open(path, "rb")
+  if not target then
+    local renamed, rename_err = os.rename(tmp, path)
+    if not renamed then
+      os.remove(tmp)
+      return false, ("write_file: unable to replace %s: %s"):format(path, tostring(rename_err))
+    end
+    return true
+  end
+  target:close()
+  local aside = unique_sibling(path, ".old")
+  local moved, move_err = os.rename(path, aside)
+  if not moved then
+    os.remove(tmp)
+    return false, ("write_file: unable to move %s aside: %s"):format(path, tostring(move_err))
+  end
+  local replaced, replace_err = os.rename(tmp, path)
+  if not replaced then
+    os.remove(tmp)
+    local restored, restore_err = os.rename(aside, path)
+    if not restored then
+      return false,
+        ("write_file: unable to replace %s (%s); rollback failed, recover %s: %s"):format(
+          path,
+          tostring(replace_err),
+          aside,
+          tostring(restore_err)
+        )
+    end
+    return false, ("write_file: unable to replace %s: %s"):format(path, tostring(replace_err))
+  end
+  os.remove(aside)
+  return true
+end
+
+---Non-empty value of an environment variable.
+---@param name string
+---@return string|nil
+local function env(name)
+  local value = os.getenv(name) -- looked up per call, so callers' specs can stub it
+  return value ~= "" and value or nil
+end
+
+---Per-user application directory for WezTerm plugins, with forward slashes.
+---@param xdg_var  string XDG variable consulted outside Windows.
+---@param fallback string Path under the home directory when it is unset.
+---@return string|nil
+local function app_dir(xdg_var, fallback)
+  local home = M.home ~= "" and M.home or nil
+  local base
+  if M.is_win then
+    base = env "LOCALAPPDATA" or env "APPDATA" or (home and home .. "/AppData/Local")
+  else
+    base = env(xdg_var) or (home and home .. fallback)
+  end
+  if not base then
+    return nil
+  end
+  return (sgsub(sgsub(base, "\\", "/"), "/+$", "")) .. "/wezterm"
+end
+
+---Directory for state a plugin keeps between runs (sessions, history,
+---last choices). Create it with `mkdir` before writing.
+---
+---`%LOCALAPPDATA%/wezterm` (or `%APPDATA%`) on Windows,
+---`$XDG_STATE_HOME/wezterm` or `~/.local/state/wezterm` elsewhere, macOS
+---included, like WezTerm's own directories. Never `wezterm.config_dir`:
+---WezTerm watches it, so writing there reloads the config.
+---
+---@return string|nil dir  Forward slashes, or nil when no home is known.
+M.state_dir = function()
+  return app_dir("XDG_STATE_HOME", "/.local/state")
+end
+
+---Directory for data a plugin produces (logs, records). Create it with
+---`mkdir` before writing.
+---
+---Same as `state_dir`, but uses `$XDG_DATA_HOME` or `~/.local/share` outside
+---Windows.
+---
+---@return string|nil dir  Forward slashes, or nil when no home is known.
+M.data_dir = function()
+  return app_dir("XDG_DATA_HOME", "/.local/share")
 end
 
 ---@deprecated Use `get_cwd` and `get_hostname` separately.

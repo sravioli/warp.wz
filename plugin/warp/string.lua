@@ -148,6 +148,7 @@ end
 ---@class SplitOpts
 ---@field plain?     boolean|nil If `true`, treat `sep` as plain text.
 ---@field trimempty? boolean|nil If `true`, trim empty edge segments.
+---@field skipempty? boolean|nil If `true`, drop every empty segment.
 
 ---Iterate over substrings separated by pattern.
 ---
@@ -161,6 +162,16 @@ end
 M.gsplit = function(s, sep, opts)
   local plain, trimempty
   opts = opts or {}
+  if opts.skipempty then
+    local next_seg = M.gsplit(s, sep, { plain = opts.plain })
+    return function()
+      local seg
+      repeat
+        seg = next_seg()
+      until seg ~= ""
+      return seg
+    end
+  end
   plain, trimempty = opts.plain, opts.trimempty
 
   local start = 1

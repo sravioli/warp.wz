@@ -241,6 +241,16 @@ describe("warp.string", function()
       assert.are.same({ "a", "b", "c" }, str.split("a,b,c", ","))
     end)
 
+    it("drops every empty part with skipempty", function()
+      assert.are.same(
+        { "C", "S", "x" },
+        str.split("-C--S-x-", "-", { plain = true, skipempty = true })
+      )
+      assert.are.same({ "a", "b" }, collect(str.gsplit(",,a,,b,,", ",", { skipempty = true })))
+      assert.are.same({}, str.split("---", "%-", { skipempty = true }))
+      assert.are.same({}, str.split("", ",", { skipempty = true }))
+    end)
+
     it("respects opts", function()
       assert.are.same({ "a", "b" }, str.split(",a,b,", ",", { trimempty = true }))
     end)

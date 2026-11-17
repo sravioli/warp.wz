@@ -47,7 +47,7 @@ function M.load_fs(opts)
 
   -- Install a minimal `wezterm` module.
   package.loaded["wezterm"] = {
-    home = home,
+    home_dir = home,
     hostname = function()
       return hostname_val
     end,

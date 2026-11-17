@@ -1079,6 +1079,65 @@ _Returns:_
 
 - `contents` (`string`, optional): file contents, or `nil` on failure.
 
+### warp.filesystem.write_file
+
+```lua
+warp.filesystem.write_file(path: string, contents: string) -> ok: boolean, err: string|nil
+```
+
+Write a file atomically: readers see the old contents or the new ones,
+never a half-written file.
+
+Writes to a unique temporary sibling, then renames it over `path`. POSIX
+rename replaces the target in one step. On Windows `os.rename` cannot
+replace an existing file, so the old file is moved aside first and put
+back when the final rename fails. The parent directory must exist (see
+`mkdir`). Never raises.
+
+**Parameters:**
+
+- `path` (`string`): file to write.
+- `contents` (`string`): new contents, written byte for byte.
+
+_Returns:_
+
+- `ok` (`boolean`): true when `path` holds `contents`.
+- `err` (`string`, optional): reason on failure. `path` is left as it was.
+
+### warp.filesystem.state_dir
+
+```lua
+warp.filesystem.state_dir() -> dir: string|nil
+```
+
+Directory for state a plugin keeps between runs (sessions, history,
+last choices). Create it with `mkdir` before writing.
+
+`%LOCALAPPDATA%/wezterm` (or `%APPDATA%`) on Windows,
+`$XDG_STATE_HOME/wezterm` or `~/.local/state/wezterm` elsewhere, macOS
+included, like WezTerm's own directories. Never `wezterm.config_dir`:
+WezTerm watches it, so writing there reloads the config.
+
+_Returns:_
+
+- `dir` (`string`, optional): forward slashes, or nil when no home is known.
+
+### warp.filesystem.data_dir
+
+```lua
+warp.filesystem.data_dir() -> dir: string|nil
+```
+
+Directory for data a plugin produces (logs, records). Create it with
+`mkdir` before writing.
+
+Same as `state_dir`, but uses `$XDG_DATA_HOME` or `~/.local/share` outside
+Windows.
+
+_Returns:_
+
+- `dir` (`string`, optional): forward slashes, or nil when no home is known.
+
 ### warp.filesystem.get_cwd_hostname
 
 ```lua
@@ -1808,6 +1867,7 @@ Fields:
 
 - `plain` (`boolean`, optional): if `true`, treat `sep` as plain text.
 - `trimempty` (`boolean`, optional): if `true`, trim empty edge segments.
+- `skipempty` (`boolean`, optional): if `true`, drop every empty segment.
 
 ### TruncateMode
 
