@@ -1,6 +1,6 @@
 ---@module "warp.maths"
 
-local min, max = math.min, math.max
+local min, max, tointeger = math.min, math.max, math.tointeger
 
 ---Math helpers.
 ---@class Warp.Maths
@@ -26,7 +26,9 @@ local magic = 2 ^ 52 + 2 ^ 51
 ---@param number number Number to round.
 ---@return integer result Nearest integer (half-to-even).
 M.round = function(number)
-  return number + magic - magic
+  local r = number + magic - magic
+  -- The trick yields a float (`2.0`); keep integers integers (nan/inf stay).
+  return tointeger(r) or r
 end
 
 ---Round a number to the nearest given multiple (half-to-even).
@@ -38,7 +40,8 @@ end
 ---@param multiple integer Target multiple (must be non-zero).
 ---@return integer result Nearest multiple of `multiple`.
 M.round_to = function(number, multiple)
-  return ((number / multiple + magic) - magic) * multiple
+  local r = ((number / multiple + magic) - magic) * multiple
+  return tointeger(r) or r
 end
 
 ---Clamp a number to the range [`minimum`, `maximum`].
