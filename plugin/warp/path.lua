@@ -1,19 +1,15 @@
 ---@module "warp.path"
 
----@class Wezterm
-local wt = require "wezterm"--[[@as Wezterm]]
-
 local fs = require "warp.filesystem" --[[@as Warp.FileSystem]]
 local str = require "warp.string" --[[@as Warp.String]]
 
 local col_width = str.col_width
 local str_split = str.split
-local wt_truncate_right = wt.truncate_right
 
-local str_byte, str_find, str_gmatch, str_sub, str_match, str_gsub, str_lower =
-  string.byte, string.find, string.gmatch, string.sub, string.match, string.gsub, string.lower
+local str_byte, str_find, str_sub, str_match, str_gsub, str_lower =
+  string.byte, string.find, string.sub, string.match, string.gsub, string.lower
 local tbl_concat = table.concat
-local ceil, floor, max = math.ceil, math.floor, math.max
+local floor, max = math.floor, math.max
 
 ---Path manipulation helpers.
 ---
@@ -216,7 +212,8 @@ M.shorten = function(path, len)
       result[i] = part
     else
       local short = str_sub(part, 1, len)
-      if short == "" then
+      -- `len <= 0` ends the path early; an empty part (from `//`) does not.
+      if short == "" and part ~= "" then
         break
       end
       result[i] = short
@@ -230,52 +227,8 @@ M.shorten = function(path, len)
   return short_path
 end
 
----Keep characters from each end with an ellipsis in the
----middle. The amount kept per side is the largest value
----that fits the `budget`, maximising readability.
----
----@param s      string  Input string.
----@param budget integer Available columns.
----@return string truncated Truncated string with ellipsis.
-local function truncate_middle(s, budget)
-  if col_width(s) <= budget then
-    return s
-  end
-
-  local ellipsis = "…"
-  local ew = col_width(ellipsis)
-  if budget <= ew then
-    return ellipsis
-  end
-
-  local remaining = budget - ew
-  local left_n = ceil(remaining / 2)
-  local right_n = floor(remaining / 2)
-
-  local left = wt_truncate_right(s, left_n)
-
-  -- Collect codepoints so the suffix keeps exactly `right_n` columns.
-  local cps = {}
-  local cp_count = 0
-  for cp in str_gmatch(s, "[^\128-\191][\128-\191]*") do
-    cp_count = cp_count + 1
-    cps[cp_count] = cp
-  end
-
-  -- Find the start index for the rightmost `right_n` columns without prepending.
-  local start_idx = cp_count + 1
-  local w = 0
-  for i = cp_count, 1, -1 do
-    local cpw = col_width(cps[i])
-    if w + cpw > right_n then
-      break
-    end
-    start_idx = i
-    w = w + cpw
-  end
-
-  return left .. ellipsis .. tbl_concat(cps, "", start_idx, cp_count)
-end
+-- Middle truncation is warp.string's (native, column-aware).
+local truncate_middle = str.truncate_middle
 
 ---Count occurrences of a literal substring using `string.find`.
 ---@param s   string  Haystack.

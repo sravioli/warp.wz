@@ -56,6 +56,11 @@ describe("warp.path", function()
       assert.are.equal("h/file.txt", path.shorten("home/file.txt", 1))
     end)
 
+    it("keeps the parts after an empty component from `//`", function()
+      assert.are.equal("/h//u/project", path.shorten("/home//user/project", 1))
+      assert.are.equal("a//b/c", path.shorten("a//b/c", 1))
+    end)
+
     it("handles len = 0 (empty short breaks early)", function()
       assert.are.equal("", path.shorten("home/user/file.txt", 0))
     end)
