@@ -5,7 +5,7 @@ contributions we accept, how to set up a checkout, and how we merge a change.
 
 We accept these contributions:
 
-- Source code: bug fixes, new features, and improvements to any of the utility modules (string, table, maths, list, filesystem, path). Read
+- Source code: bug fixes, new features, and improvements to any of the modules (string, table, maths, list, filesystem, path, process, log, ribbon). Read
   [Environment setup](#environment-setup), [Best practices](#best-practices),
   and [Contribution workflow](#contribution-workflow).
 - Documentation: improvements to the README, the inline LuaLS annotations, or
@@ -20,7 +20,8 @@ We do not accept translations, social media posts, or outreach work.
 
 warp.wz is a utility library for [WezTerm](https://wezterm.org/) plugins and
 configuration code. It has modules for strings, tables, lists, maths, the file
-system, and paths.
+system, paths, processes, tagged loggers with sinks (`warp.log`), and a
+chainable `wezterm.format` builder (`warp.ribbon`).
 
 The [README](readme.md) tells you how to use the plugin.
 
@@ -71,6 +72,13 @@ You need:
    local root = wezterm.home_dir .. "/path/to/warp.wz/plugin/"
    package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
    local warp = require "warp.api"
+   ```
+
+   Specs load warden.wz from a sibling checkout,
+   so clone it next to this repository:
+
+   ```sh
+   git clone https://github.com/sravioli/warden.wz ../warden.wz
    ```
 
 4. Run the checks to make sure that the setup works:

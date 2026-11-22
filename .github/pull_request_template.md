@@ -14,7 +14,7 @@
 <!--
 Fill in what applies, delete the rest.
 - Bug fix: smallest setup that reproduces it, and the root cause. Common areas:
-  string, table, list, maths, path, filesystem, platform behavior.
+  string, table, list, maths, path, filesystem, process, logging, format building, platform behavior.
 - Feature: API sketch and behavior, including defaults and failure cases.
 - Documentation: files and examples changed.
 -->

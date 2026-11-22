@@ -20,7 +20,10 @@ them does not start child processes.
 ### Requirements
 
 Requires **WezTerm [`20230320-124340-559cb7b0`](https://wezterm.org/config/lua/wezterm.plugin/require.html)
-or newer** and Git. No plugin dependencies or special fonts are required.
+or newer** and Git. No special fonts are required. `warp.log` and `warp.ribbon`
+load [warden.wz](https://github.com/sravioli/warden.wz) to validate their
+options. Set `validate = false` in their `setup` once your configuration is
+stable to never load it.
 
 Process helpers need their target executable. Directory creation uses `mkdir`
 on POSIX or `cmd.exe` on Windows. Run potentially yielding helpers from
@@ -168,15 +171,17 @@ annotations in `plugin/`, so it always matches the code.
 
 Each module is a field of the table that `wezterm.plugin.require` returns:
 
-| Module            | Contents                                                                  |
-| ----------------- | ------------------------------------------------------------------------- |
-| `warp.string`     | Visible width, ANSI stripping, padding, splitting, truncation, prefixes.  |
-| `warp.table`      | Emptiness tests, copies, keys and values, merges, filters, deep equality. |
-| `warp.list`       | Slices, deduplication, binary search, flattening, zips, combinations.     |
-| `warp.maths`      | Rounding and clamping.                                                    |
-| `warp.filesystem` | Platform, home, current directory, hostname, Git root, file reads.        |
-| `warp.path`       | Normalization, parts, shortening, joining, and `~` expansion.             |
-| `warp.process`    | Executable lookup, argv quoting and joining, and child processes.         |
+| Module            | Contents                                                                      |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `warp.string`     | Visible width, ANSI stripping, padding, splitting, truncation, prefixes.      |
+| `warp.table`      | Emptiness tests, copies, keys and values, merges, filters, deep equality.     |
+| `warp.list`       | Slices, deduplication, binary search, flattening, zips, combinations.         |
+| `warp.maths`      | Rounding and clamping.                                                        |
+| `warp.filesystem` | Platform, home, current directory, hostname, Git root, file reads.            |
+| `warp.path`       | Normalization, parts, shortening, joining, and `~` expansion.                 |
+| `warp.process`    | Executable lookup, argv quoting and joining, and child processes.             |
+| `warp.log`        | Tagged loggers with level filters and sinks. See [the guide](../docs/log.md). |
+| `warp.ribbon`     | Chainable `wezterm.format` builder. See [the guide](../docs/ribbon.md).       |
 
 ## Troubleshooting
 

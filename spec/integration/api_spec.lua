@@ -7,13 +7,35 @@
 package.loaded["wezterm"] = require "spec.mocks.wezterm"
 package.path = "plugin/?.lua;plugin/?/init.lua;" .. package.path
 
+-- Cleared before warp.api loads, so the lazy-loading test sees a fresh state.
+package.loaded["warp.log"] = nil
+package.loaded["warp.ribbon"] = nil
+
 local api = require "warp.api"
 
 describe("api module composition", function()
+  -- ── Modules load on first access ─────────────────────────────────────
+
+  it("loads log and ribbon only when first read", function()
+    assert.is_nil(package.loaded["warp.log"])
+    assert.is_nil(package.loaded["warp.ribbon"])
+    assert.is_nil(rawget(api, "log"))
+
+    local log = api.log
+
+    assert.are.equal(package.loaded["warp.log"], log)
+    assert.are.equal(log, rawget(api, "log"))
+    assert.is_nil(package.loaded["warp.ribbon"])
+  end)
+
+  it("returns nil for names that are not modules", function()
+    assert.is_nil(api.nope)
+  end)
+
   -- ── All submodules are accessible ────────────────────────────────────
 
   describe("exposes all submodules", function()
-    it("contains all seven submodule fields", function()
+    it("contains all nine submodule fields", function()
       assert.is_table(api.list)
       assert.is_table(api.maths)
       assert.is_table(api.table)
@@ -21,6 +43,8 @@ describe("api module composition", function()
       assert.is_table(api.path)
       assert.is_table(api.process)
       assert.is_table(api.string)
+      assert.is_table(api.log)
+      assert.is_table(api.ribbon)
     end)
   end)
 

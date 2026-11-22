@@ -13,6 +13,17 @@ source annotations and generate this file again.
 - [warp.path](#warppath)
 - [warp.process](#warpprocess)
 - [warp.string](#warpstring)
+- [warp.log](#warplog)
+- [warp.ribbon](#warpribbon)
+- [Log](#log)
+- [Log.ConfigModule](#logconfigmodule)
+- [Log.Levels](#loglevels)
+- [Log.Sinks](#logsinks)
+- [Ribbon](#ribbon)
+- [Ribbon.ConfigModule](#ribbonconfigmodule)
+- [Log.Sinks.FileSink](#logsinksfilesink)
+- [Log.Sinks.Json](#logsinksjson)
+- [Log.Sinks.MemorySink](#logsinksmemorysink)
 - [Types](#types)
 
 ## warp.list
@@ -1851,15 +1862,919 @@ _Returns:_
 
 - `truncated` (`string`): truncated string.
 
+## warp.log
+
+[Back to top](#warpwz-api-reference)
+
+Values:
+
+- `warp.log.tag` (`string`): printable name prefix included in each log line.
+- `warp.log.enabled` (`boolean`): whether this logger instance is currently enabled.
+- `warp.log.threshold` (`integer`): minimum level required for logs to be emitted.
+- `warp.log.sinks` (`Log.Sinks`): lazy-loaded sink registry.
+- `warp.log.levels` (`Log.Levels`): level constants and normalisation.
+- `warp.log.config` (`Log.ConfigModule`): configuration module.
+
+### warp.log.new
+
+```lua
+warp.log.new(tag?: string, enabled?: boolean, sinks?: Log.Sink[]) -> Log
+```
+
+Create new logger instance.
+
+If `config.sinks.default_enabled` is true, the default sink is prepended to the list.
+The provided `sinks` array is shallow-copied and never mutated.
+
+**Parameters:**
+
+- `tag` (`string`, optional): identifier printed in brackets before message. Defaults to "Log".
+- `enabled` (`boolean`, optional): enable logging status. Defaults to true.
+- `sinks` (`Log.Sink[]`, optional): list of sinks to output to.
+
+_Returns:_
+
+- `#1` (`Log`)
+
+### warp.log:add_sink
+
+```lua
+warp.log:add_sink(sink: Log.Sink)
+```
+
+Add sink to the sinks table.
+
+**Parameters:**
+
+- `sink` (`Log.Sink`): function to handle log entry.
+
+### warp.log:log
+
+```lua
+warp.log:log(level: Log.Level, message: string, ...: any)
+```
+
+Log message with specified log level.
+
+Accepts simple string or format string. Non-string arguments are stringified
+(userdata via `tostring`, others via pretty-printing when available).
+
+**Parameters:**
+
+- `level` (`Log.Level`): severity level.
+- `message` (`string`): log message or format string.
+- `...` (`any`): additional arguments to format into message.
+
+### warp.log:debug
+
+```lua
+warp.log:debug(message: string, ...: any)
+```
+
+Log debug level message.
+
+Prepends "DEBUG: " to the message string.
+
+**Parameters:**
+
+- `message` (`string`): log message or format string.
+- `...` (`any`): additional arguments to format into message.
+
+### warp.log:info
+
+```lua
+warp.log:info(message: string, ...: any)
+```
+
+Log information level message.
+
+**Parameters:**
+
+- `message` (`string`): log message or format string.
+- `...` (`any`): additional arguments to format into message.
+
+### warp.log:warn
+
+```lua
+warp.log:warn(message: string, ...: any)
+```
+
+Log warning level message.
+
+**Parameters:**
+
+- `message` (`string`): log message or format string.
+- `...` (`any`): additional arguments to format into message.
+
+### warp.log:error
+
+```lua
+warp.log:error(message: string, ...: any)
+```
+
+Log error level message.
+
+**Parameters:**
+
+- `message` (`string`): log message or format string.
+- `...` (`any`): additional arguments to format into message.
+
+### warp.log.setup
+
+```lua
+warp.log.setup(overrides?: table)
+```
+
+Override default config values.
+
+## warp.ribbon
+
+[Back to top](#warpwz-api-reference)
+
+Values:
+
+- `warp.ribbon.config` (`Ribbon.ConfigModule`)
+
+### warp.ribbon.new
+
+```lua
+warp.ribbon.new(self_or_name?: string|Ribbon.Api, name_or_atomic?: boolean|string, atomic?: boolean) -> Ribbon
+```
+
+**Parameters:**
+
+- `self_or_name` (`string|Ribbon.Api`, optional)
+- `name_or_atomic` (`boolean|string`, optional)
+- `atomic` (`boolean`, optional)
+
+_Returns:_
+
+- `#1` (`Ribbon`)
+
+### warp.ribbon.setup
+
+```lua
+warp.ribbon.setup(opts?: table) -> Ribbon.Config
+```
+
+Configure Ribbon.
+
+**Parameters:**
+
+- `opts` (`table`, optional)
+
+_Returns:_
+
+- `#1` (`Ribbon.Config`)
+
+## Log
+
+[Back to top](#warpwz-api-reference)
+
+A lightweight wrapper around WezTerm logging facilities.
+
+Logging is globally gated by `Log.Config.enabled`. When set to `false`, all
+logger instances are silenced.
+
+Values:
+
+- `Log.tag` (`string`): printable name prefix included in each log line.
+- `Log.enabled` (`boolean`): whether this logger instance is currently enabled.
+- `Log.threshold` (`integer`): minimum level required for logs to be emitted.
+
+### Log.sinks
+
+```lua
+Log.sinks(entry: Log.Event) -> any[]
+```
+
+List of active sinks.
+
+### Log.new
+
+```lua
+Log.new(tag?: string, enabled?: boolean, sinks?: Log.Sink[]) -> Log
+```
+
+Create new logger instance.
+
+If `config.sinks.default_enabled` is true, the default sink is prepended to the list.
+The provided `sinks` array is shallow-copied and never mutated.
+
+**Parameters:**
+
+- `tag` (`string`, optional): identifier printed in brackets before message. Defaults to "Log".
+- `enabled` (`boolean`, optional): enable logging status. Defaults to true.
+- `sinks` (`Log.Sink[]`, optional): list of sinks to output to.
+
+_Returns:_
+
+- `#1` (`Log`)
+
+### Log:add_sink
+
+```lua
+Log:add_sink(sink: Log.Sink)
+```
+
+Add sink to the sinks table.
+
+**Parameters:**
+
+- `sink` (`Log.Sink`): function to handle log entry.
+
+### Log:log
+
+```lua
+Log:log(level: Log.Level, message: string, ...: any)
+```
+
+Log message with specified log level.
+
+Accepts simple string or format string. Non-string arguments are stringified
+(userdata via `tostring`, others via pretty-printing when available).
+
+**Parameters:**
+
+- `level` (`Log.Level`): severity level.
+- `message` (`string`): log message or format string.
+- `...` (`any`): additional arguments to format into message.
+
+### Log:debug
+
+```lua
+Log:debug(message: string, ...: any)
+```
+
+Log debug level message.
+
+Prepends "DEBUG: " to the message string.
+
+**Parameters:**
+
+- `message` (`string`): log message or format string.
+- `...` (`any`): additional arguments to format into message.
+
+### Log:info
+
+```lua
+Log:info(message: string, ...: any)
+```
+
+Log information level message.
+
+**Parameters:**
+
+- `message` (`string`): log message or format string.
+- `...` (`any`): additional arguments to format into message.
+
+### Log:warn
+
+```lua
+Log:warn(message: string, ...: any)
+```
+
+Log warning level message.
+
+**Parameters:**
+
+- `message` (`string`): log message or format string.
+- `...` (`any`): additional arguments to format into message.
+
+### Log:error
+
+```lua
+Log:error(message: string, ...: any)
+```
+
+Log error level message.
+
+**Parameters:**
+
+- `message` (`string`): log message or format string.
+- `...` (`any`): additional arguments to format into message.
+
+## Log.ConfigModule
+
+[Back to top](#warpwz-api-reference)
+
+### Log.ConfigModule.get
+
+```lua
+Log.ConfigModule.get() -> Log.Config
+```
+
+Return the current configuration as a read-only reference.
+
+_Returns:_
+
+- `#1` (`Log.Config`)
+
+### Log.ConfigModule.setup
+
+```lua
+Log.ConfigModule.setup(overrides?: table)
+```
+
+Override configuration values.
+
+Options are checked with warden: invalid fields and unknown keys are logged,
+invalid fields are dropped, and the rest still apply. `validate = false`
+skips the check for this and later calls, and for the sink constructors.
+Only keys present in the defaults are stored. The `sinks` sub-table is
+merged one level deep.
+
+**Parameters:**
+
+- `overrides` (`table`, optional): partial config to merge.
+
+## Log.Levels
+
+[Back to top](#warpwz-api-reference)
+
+Values:
+
+- `Log.Levels.levels` (`enum Log.Levels.Level`)
+- `Log.Levels.names` (`table`)
+
+### Log.Levels.normalize
+
+```lua
+Log.Levels.normalize(level: Log.Level) -> level: integer?
+```
+
+Normalize log level from string or integer.
+
+If a string is provided (e.g., "info"), it is uppercased and mapped to its integer value.
+Returns `nil` for unrecognised level strings.
+
+**Parameters:**
+
+- `level` (`Log.Level`): level representation to normalize.
+
+_Returns:_
+
+- `level` (`integer`, optional): normalized numeric level, or nil if unrecognised.
+
+## Log.Sinks
+
+[Back to top](#warpwz-api-reference)
+
+Values:
+
+- `Log.Sinks.json` (`Log.Sinks.Json`): JSON encode/decode helpers and JSON sink.
+
+### Log.Sinks.wz
+
+```lua
+Log.Sinks.wz(entry: Log.Event) -> any
+```
+
+WezTerm native logging sink.
+
+### Log.Sinks.memory
+
+```lua
+Log.Sinks.memory(opts?: Log.Sinks.MemoryOpts) -> Log.Sinks.MemorySink
+```
+
+Memory sink constructor.
+
+### Log.Sinks.file
+
+```lua
+Log.Sinks.file(opts?: Log.Sinks.FileOpts) -> Log.Sinks.FileSink
+```
+
+File sink constructor.
+
+## Ribbon
+
+[Back to top](#warpwz-api-reference)
+
+Values:
+
+- `Ribbon.log` (`Log`): logger instance.
+- `Ribbon.atomic` (`boolean?`): reset text attributes after each operation.
+
+### Ribbon.new
+
+```lua
+Ribbon.new(name?: string, atomic?: boolean) -> ribbon: Ribbon
+```
+
+Create a new Ribbon instance.
+
+**Parameters:**
+
+- `name` (`string`, optional)
+- `atomic` (`boolean`, optional)
+
+_Returns:_
+
+- `ribbon` (`Ribbon`)
+
+### Ribbon:add
+
+```lua
+Ribbon:add(action: "append"|"prepend", background?: string, foreground?: string, text?: string, attributes?: string|string[]) -> self: Ribbon|nil
+```
+
+Add one styled text segment.
+
+```lua
+action:
+    | "append"
+    | "prepend"
+```
+
+**Parameters:**
+
+- `action` (`"append"|"prepend"`)
+- `background` (`string`, optional)
+- `foreground` (`string`, optional)
+- `text` (`string`, optional)
+- `attributes` (`string|string[]`, optional)
+
+_Returns:_
+
+- `self` (`Ribbon`, optional)
+
+### Ribbon:append
+
+```lua
+Ribbon:append(background?: string, foreground?: string, text?: string, attributes?: string|string[]) -> self: Ribbon|nil
+```
+
+Append an element to the ribbon.
+
+**Parameters:**
+
+- `background` (`string`, optional)
+- `foreground` (`string`, optional)
+- `text` (`string`, optional)
+- `attributes` (`string|string[]`, optional)
+
+_Returns:_
+
+- `self` (`Ribbon`, optional)
+
+### Ribbon:prepend
+
+```lua
+Ribbon:prepend(background?: string, foreground?: string, text?: string, attributes?: string|string[]) -> self: Ribbon|nil
+```
+
+Prepend an element to the ribbon.
+
+**Parameters:**
+
+- `background` (`string`, optional)
+- `foreground` (`string`, optional)
+- `text` (`string`, optional)
+- `attributes` (`string|string[]`, optional)
+
+_Returns:_
+
+- `self` (`Ribbon`, optional)
+
+### Ribbon:append_items
+
+```lua
+Ribbon:append_items(items?: string|table) -> self: Ribbon
+```
+
+Append raw `wezterm.format` items.
+
+**Parameters:**
+
+- `items` (`string|table`, optional): FormatItem or FormatItem[].
+
+_Returns:_
+
+- `self` (`Ribbon`)
+
+### Ribbon:prepend_items
+
+```lua
+Ribbon:prepend_items(items?: string|table) -> self: Ribbon
+```
+
+Prepend raw `wezterm.format` items.
+
+**Parameters:**
+
+- `items` (`string|table`, optional): FormatItem or FormatItem[].
+
+_Returns:_
+
+- `self` (`Ribbon`)
+
+### Ribbon:clear
+
+```lua
+Ribbon:clear() -> self: Ribbon
+```
+
+Clear all elements from the ribbon.
+
+_Returns:_
+
+- `self` (`Ribbon`)
+
+### Ribbon:reset_attributes
+
+```lua
+Ribbon:reset_attributes() -> nil
+```
+
+Append a reset-attributes marker.
+
+_Returns:_
+
+- `#1` (`nil`)
+
+### Ribbon:format
+
+```lua
+Ribbon:format() -> string
+```
+
+Render the ribbon with `wezterm.format`.
+
+_Returns:_
+
+- `#1` (`string`)
+
+### Ribbon:debug
+
+```lua
+Ribbon:debug(formatted: boolean) -> nil
+```
+
+Log the ribbon to the debug console.
+
+**Parameters:**
+
+- `formatted` (`boolean`): log the formatted string when true, or the raw table when false.
+
+_Returns:_
+
+- `#1` (`nil`)
+
+### Ribbon:items
+
+```lua
+Ribbon:items() -> table
+```
+
+Return the raw format-item table. Useful for tests and advanced callers.
+
+_Returns:_
+
+- `#1` (`table`)
+
+## Ribbon.ConfigModule
+
+[Back to top](#warpwz-api-reference)
+
+### Ribbon.ConfigModule.setup
+
+```lua
+Ribbon.ConfigModule.setup(opts?: table) -> Ribbon.Config
+```
+
+Configure Ribbon. Invalid options are logged and ignored.
+
+**Parameters:**
+
+- `opts` (`table`, optional)
+
+_Returns:_
+
+- `#1` (`Ribbon.Config`)
+
+### Ribbon.ConfigModule.get
+
+```lua
+Ribbon.ConfigModule.get() -> Ribbon.Config
+```
+
+Return the active Ribbon configuration.
+
+_Returns:_
+
+- `#1` (`Ribbon.Config`)
+
+### Ribbon.ConfigModule.defaults
+
+```lua
+Ribbon.ConfigModule.defaults() -> Ribbon.Config
+```
+
+Return a copy of the default configuration.
+
+_Returns:_
+
+- `#1` (`Ribbon.Config`)
+
+## Log.Sinks.FileSink
+
+[Back to top](#warpwz-api-reference)
+
+Values:
+
+- `Log.Sinks.FileSink.path` (`string`): resolved destination file path.
+- `Log.Sinks.FileSink.format` (`Log.Sinks.FileFormat`): output format for written entries.
+- `Log.Sinks.FileSink.formatter` (`(Log.Sinks.FileFormatter)?`): custom formatter used for serialization.
+
+### Log.Sinks.FileSink:serialize
+
+```lua
+Log.Sinks.FileSink:serialize(event: Log.Event) -> ok: boolean, payload_or_err: string
+```
+
+Serialize an event to the configured file format.
+
+**Parameters:**
+
+- `event` (`Log.Event`)
+
+_Returns:_
+
+- `ok` (`boolean`)
+- `payload_or_err` (`string`)
+
+### Log.Sinks.FileSink:append
+
+```lua
+Log.Sinks.FileSink:append(payload: string) -> ok: boolean, err: string?
+```
+
+Append raw text to the sink file.
+
+**Parameters:**
+
+- `payload` (`string`)
+
+_Returns:_
+
+- `ok` (`boolean`)
+- `err` (`string`, optional)
+
+### Log.Sinks.FileSink:write
+
+```lua
+Log.Sinks.FileSink:write(event: Log.Event)
+```
+
+Encode and append an event as a formatted line.
+
+**Parameters:**
+
+- `event` (`Log.Event`)
+
+## Log.Sinks.Json
+
+[Back to top](#warpwz-api-reference)
+
+JSON encode/decode helpers and the JSON sink. Calling the module itself,
+`log.sinks.json(event)`, is the same as `write(event)`.
+
+### Log.Sinks.Json.encode
+
+```lua
+Log.Sinks.Json.encode(value: any) -> string
+```
+
+Encode a Lua value to a JSON string.
+
+**Parameters:**
+
+- `value` (`any`)
+
+_Returns:_
+
+- `#1` (`string`)
+
+### Log.Sinks.Json.decode
+
+```lua
+Log.Sinks.Json.decode(payload: string) -> any
+```
+
+Decode a JSON string back to a Lua value.
+
+**Parameters:**
+
+- `payload` (`string`)
+
+_Returns:_
+
+- `#1` (`any`)
+
+### Log.Sinks.Json.write
+
+```lua
+Log.Sinks.Json.write(event: Log.Event) -> nil
+```
+
+Emit an event as a single JSON line through WezTerm's logger.
+
+**Parameters:**
+
+- `event` (`Log.Event`)
+
+_Returns:_
+
+- `#1` (`nil`)
+
+## Log.Sinks.MemorySink
+
+[Back to top](#warpwz-api-reference)
+
+Events live in a ring buffer, so a full sink evicts in O(1) instead of
+shifting every entry. `entries` is read as a fresh oldest-first list.
+
+Values:
+
+- `Log.Sinks.MemorySink.entries` (`Log.Event[]`): stored log events, oldest first (a copy).
+- `Log.Sinks.MemorySink.max_entries` (`integer`): maximum stored entries (0 = unlimited).
+
+### Log.Sinks.MemorySink:write
+
+```lua
+Log.Sinks.MemorySink:write(event: Log.Event)
+```
+
+Store event in memory.
+
+When `max_entries` is reached the oldest entry is discarded.
+
+**Parameters:**
+
+- `event` (`Log.Event`): log event to store.
+
+### Log.Sinks.MemorySink:clear
+
+```lua
+Log.Sinks.MemorySink:clear()
+```
+
+Remove all stored log entries.
+
+### Log.Sinks.MemorySink:get_entries
+
+```lua
+Log.Sinks.MemorySink:get_entries() -> entries: Log.Event[]
+```
+
+Return shallow copy of stored entries, oldest first.
+
+_Returns:_
+
+- `entries` (`Log.Event[]`): copy of stored log events.
+
+### Log.Sinks.MemorySink:count
+
+```lua
+Log.Sinks.MemorySink:count() -> count: integer
+```
+
+Get number of entries in memory.
+
+_Returns:_
+
+- `count` (`integer`): number of stored entries.
+
+### Log.Sinks.MemorySink:to_string
+
+```lua
+Log.Sinks.MemorySink:to_string() -> formatted_log: string
+```
+
+Stringify all entries into human-readable lines.
+
+Formats entries as `[LEVEL] Message`, separated by newlines.
+
+_Returns:_
+
+- `formatted_log` (`string`): concatenated string of all log entries.
+
 ## Types
 
 [Back to top](#warpwz-api-reference)
+
+### Log.Config
+
+Fields:
+
+- `enabled` (`boolean`): whether logging is enabled globally.
+- `threshold` (`string|integer`): minimum log level.
+- `sinks` (`Log.Config.Sinks`): sink-related settings.
+- `validate` (`boolean`): set to `false` to skip option validation (and never load warden).
+
+### Log.Config.Sinks
+
+Fields:
+
+- `default_enabled` (`boolean`): prepend the default WezTerm sink to every logger.
+
+### Log.Event
+
+Fields:
+
+- `timestamp` (`integer`): unix timestamp in seconds.
+- `datetime` (`string`): local timestamp formatted as `%Y-%m-%d %H:%M:%S%.3f`.
+- `level` (`integer`): log severity level.
+- `level_name` (`string`): human-readable name of the log level.
+- `tag` (`string`): identifier of the logger instance.
+- `message` (`string`): final formatted log message.
+- `raw_message` (`string`): original message string before formatting.
+
+### Log.Level
+
+```lua
+---@alias Log.Level string|integer|Log.Levels.Level
+```
+
+### Log.Levels.Level
+
+### Log.Sink
+
+```lua
+---@alias Log.Sink fun(entry: Log.Event):any
+```
+
+### Log.Sinks.FileFormat
+
+```lua
+---@alias Log.Sinks.FileFormat "json"|"text"
+```
+
+### Log.Sinks.FileFormatter
+
+```lua
+---@alias Log.Sinks.FileFormatter fun(event: Log.Event):string
+```
+
+### Log.Sinks.FileOpts
+
+Fields:
+
+- `path` (`string`, optional): destination file path. Auto-resolved when omitted.
+- `format` (`Log.Sinks.FileFormat`, optional): output format. Defaults to "json".
+- `formatter` (`Log.Sinks.FileFormatter`, optional): custom formatter. When provided, it overrides `format`.
+
+### Log.Sinks.MemoryOpts
+
+Fields:
+
+- `max_entries` (`integer`, optional): maximum stored entries. Oldest are evicted when full. 0 = unlimited. Defaults to 10 000.
 
 ### OsType
 
 ```lua
 ---@alias OsType "linux"|"mac"|"unknown"|"windows"
 ```
+
+### Ribbon.Config
+
+Fields:
+
+- `log` (`Ribbon.LogConfig`)
+- `defaults` (`Ribbon.Defaults`)
+- `attribute_aliases` (`table<string, string|string[]>`)
+- `validate_attributes` (`boolean`)
+- `strict_mode` (`boolean`)
+- `text` (`Ribbon.TextConfig`)
+- `atomic` (`boolean`)
+- `validate` (`boolean`): set to `false` to skip option validation (and never load warden).
+
+### Ribbon.Defaults
+
+Fields:
+
+- `foreground` (`string`, optional)
+- `background` (`string`, optional)
+- `attributes` (`table<string, string|table>`)
+- `colors` (`table<string, boolean>`)
+
+### Ribbon.LogConfig
+
+Fields:
+
+- `enabled` (`boolean`)
+- `threshold` (`integer|"DEBUG"|"ERROR"|"INFO"|"WARN"`)
+- `sinks` (`table`, optional): accepted for compatibility with the old layout opts.
+
+### Ribbon.TextConfig
+
+Fields:
+
+- `strip` (`boolean`)
+- `max_length` (`integer`, optional)
+- `transform` (`fun(text: string):string`, optional)
 
 ### SplitOpts
 
