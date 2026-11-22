@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [1.0.1](https://github.com/sravioli/warp.wz/compare/48d868834d323ebaf3419a9aaebdf2c16d04ba2c..1.0.1) - 2026-11-22
+#### Style
+- (**ribbon**) stop shadowing the logger parameter with the log module - ([48d8688](https://github.com/sravioli/warp.wz/commit/48d868834d323ebaf3419a9aaebdf2c16d04ba2c)) - sravioli
+
+- - -
+
 ## [1.0.0](https://github.com/sravioli/warp.wz/compare/769bb50e39497954d976fabcf4eabf35fb540f87..1.0.0) - 2026-11-22
 #### Features
 - (**filesystem**) add state_dir, data_dir and atomic write_file - ([52a307a](https://github.com/sravioli/warp.wz/commit/52a307aa46bbcaebadde78720c78519c1c6006c1)) - sravioli
