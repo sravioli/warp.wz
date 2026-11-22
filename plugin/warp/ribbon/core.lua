@@ -1,8 +1,8 @@
 ---@module "warp.ribbon.core"
 
 local config = require "warp.ribbon.config"
-local log = require "warp.log"
 local str = require "warp.string"
+local warp_log = require "warp.log"
 local wezterm = require "wezterm" --[[@as Wezterm]]
 
 local tinsert = table.insert
@@ -156,8 +156,8 @@ end
 ---@param cfg Ribbon.LogConfig
 ---@return Log
 local function new_logger(tag, cfg)
-  local logger = log.new(tag, cfg.enabled ~= false)
-  logger.threshold = log.levels.normalize(cfg.threshold) or log.levels.levels.WARN
+  local logger = warp_log.new(tag, cfg.enabled ~= false)
+  logger.threshold = warp_log.levels.normalize(cfg.threshold) or warp_log.levels.levels.WARN
   return logger
 end
 
