@@ -2,6 +2,26 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [1.0.0](https://github.com/sravioli/warp.wz/compare/769bb50e39497954d976fabcf4eabf35fb540f87..1.0.0) - 2026-11-22
+#### Features
+- (**filesystem**) add state_dir, data_dir and atomic write_file - ([52a307a](https://github.com/sravioli/warp.wz/commit/52a307aa46bbcaebadde78720c78519c1c6006c1)) - sravioli
+- absorb log.wz and ribbon.wz, load modules lazily, validate config - ([93b62c3](https://github.com/sravioli/warp.wz/commit/93b62c36853b7944405a11770a3042f2ab726463)) - sravioli
+#### Bug Fixes
+- (**list**) keep every nil-key item in unique, share tilde helpers - ([eed9c90](https://github.com/sravioli/warp.wz/commit/eed9c90ecf3f976e6d7f3ce33e2d9c8c04cc7c02)) - sravioli
+- (**maths**) return integers from round and round_to - ([f4926a9](https://github.com/sravioli/warp.wz/commit/f4926a9c08d15f24d07e82ad50c055ba6e6c462e)) - sravioli
+- (**path**) keep the parts after an empty segment in shorten - ([1974faf](https://github.com/sravioli/warp.wz/commit/1974faf41a1e6e1d64139f99489ea0edcd9b2ca0)) - sravioli
+#### Documentation
+- add minit.lua for reproducing bugs - ([7053556](https://github.com/sravioli/warp.wz/commit/70535564288efc33fb8aea02bbe7a8768c736622)) - sravioli
+#### Continuous Integration
+- pass the release tag to the shell through env - ([067060a](https://github.com/sravioli/warp.wz/commit/067060a35138595ec5fc40464eb132a717100f09)) - sravioli
+- release from the pushed tag - ([d68323a](https://github.com/sravioli/warp.wz/commit/d68323a4272734dced00c4bdfba4e2e5239d485e)) - sravioli
+- count only the plugin's own files in coverage - ([37c928b](https://github.com/sravioli/warp.wz/commit/37c928ba412887a0653bd033b5bd826a398131a2)) - sravioli
+- bump cocogitto/cocogitto-action from 3.11 to 4 in the actions group across 1 directory (#5) - ([d1b40e4](https://github.com/sravioli/warp.wz/commit/d1b40e405cf4194bfb6f06eb644309125a0cb8b6)) - [@sravioli](https://github.com/sravioli)
+- adapt workflows to cocogitto-action v4 - ([14132d9](https://github.com/sravioli/warp.wz/commit/14132d91e798cf0fa11b4009d0e2076677dc600f)) - sravioli
+- bump cocogitto/cocogitto-action - ([769bb50](https://github.com/sravioli/warp.wz/commit/769bb50e39497954d976fabcf4eabf35fb540f87)) - dependabot[bot]
+
+- - -
+
 ## [0.2.1](https://github.com/sravioli/warp.wz/compare/296ee31207deb119a808cd090777b8309d61cc46..0.2.1) - 2026-11-16
 #### Bug Fixes
 - (**string**) strip charset designations in strip_ansi - ([d568df0](https://github.com/sravioli/warp.wz/commit/d568df0f459793b8c19e6f2cc5b74b26fc667ab1)) - sravioli
